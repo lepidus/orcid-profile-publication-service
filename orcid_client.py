@@ -2,7 +2,7 @@ import requests
 
 class OrcidClient:
     API_VERSION = "v3.0"
-    BASE_URL = "https://sandbox.orcid.org/" + API_VERSION
+    BASE_URL = "https://api.sandbox.orcid.org/" + API_VERSION
 
     def __init__(self, client_id, client_secret, redirect_uri):
         self.client_id = client_id
@@ -27,7 +27,7 @@ class OrcidClient:
     def publish_to_orcid(self, access_token, orcid_id, work_data):
         url = f"{self.BASE_URL}/{orcid_id}/work"
         headers = {
-            "Content-Type": "application/json",
+            "Content-Type": "application/vnd.orcid+json",
             "Accept": "application/json",
             "Authorization": f"Bearer {access_token}"
         }
