@@ -22,5 +22,18 @@ class TestOrcidClient(unittest.TestCase):
         self.assertEqual(token_info["access_token"], "fake_token")
         self.assertEqual(token_info["orcid"], "0000-0000-0000-0000")
     
+    @patch('orcid_client.requests.post')
+    def test_publish_work_with_success(self, mock_post):
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {"message": "Work added"}
+        mock_post.return_value = mock_response
+
+        data = {"title": "My article"}
+        status, response = self.client.publish_to_orcid("fake_token", "0000-0000-0000-0000", data)
+
+        self.assertEqual(status, 201)
+        self.assertIn("Work added", response["message"])
+    
 if __name__ == "__main__":
     unittest.main()
