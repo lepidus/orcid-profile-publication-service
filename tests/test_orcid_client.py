@@ -35,5 +35,18 @@ class TestOrcidClient(unittest.TestCase):
         self.assertEqual(status, 201)
         self.assertIn("Work added", response["message"])
     
+    @patch('orcid_client.requests.post')
+    def test_error_when_publish_to_orcid(self, mock_post):
+        mock_response = Mock()
+        mock_response.status_code = 403
+        mock_response.text = "Permission denied"
+        mock_post.return_value = mock_response
+
+        data = {"title": "My article"}
+        status, response = self.client.publish_to_orcid("invalid_token", "0000-0000-0000-0000", data)
+        
+        self.assertEqual(status, 403)
+        self.assertIn("Permission denied", response["error"])
+    
 if __name__ == "__main__":
     unittest.main()
