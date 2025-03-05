@@ -9,7 +9,10 @@ class OrcidClient:
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.token_url = "https://sandbox.orcid.org/oauth/token"
-
+    
+    def is_authorized_access_token(self, scope, expires_in):
+        return scope == "/activities/update"
+    
     def get_orcid_id_and_access_token(self, authorization_code):
         params = {
             "client_id": self.client_id,
