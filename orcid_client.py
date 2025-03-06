@@ -1,4 +1,5 @@
 import requests
+import datetime
 
 class OrcidClient:
     API_VERSION = "v3.0"
@@ -12,7 +13,8 @@ class OrcidClient:
         self.token_url = "https://sandbox.orcid.org/oauth/token"
     
     def is_authorized_access_token(self, scope, expires_in):
-        return scope == self.ORCID_API_MEMBER_SCOPE 
+        current_date = datetime.datetime.now()
+        return scope == self.ORCID_API_MEMBER_SCOPE and current_date.timestamp() < expires_in
     
     def get_orcid_id_and_access_token(self, authorization_code):
         params = {
