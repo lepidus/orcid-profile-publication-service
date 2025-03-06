@@ -3,6 +3,7 @@ import requests
 class OrcidClient:
     API_VERSION = "v3.0"
     BASE_URL = "https://api.sandbox.orcid.org/" + API_VERSION
+    ORCID_API_MEMBER_SCOPE = "/activities/update"
 
     def __init__(self, client_id, client_secret, redirect_uri):
         self.client_id = client_id
@@ -11,7 +12,7 @@ class OrcidClient:
         self.token_url = "https://sandbox.orcid.org/oauth/token"
     
     def is_authorized_access_token(self, scope, expires_in):
-        return scope == "/activities/update"
+        return scope == self.ORCID_API_MEMBER_SCOPE 
     
     def get_orcid_id_and_access_token(self, authorization_code):
         params = {
