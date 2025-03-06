@@ -11,21 +11,31 @@ with open('work_data_example.json', 'r') as file:
 
     orcid_client = OrcidClient(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
 
-    print("\nPara obter seu código de autorização, acesse:\n")
-    print(
-        f"https://sandbox.orcid.org/oauth/authorize?client_id={CLIENT_ID}&response_type=code&scope=/activities/update&redirect_uri={REDIRECT_URI}"
-    )
-    auth_code = input("\nInsira o código de autorização do ORCID: ")
+    access_token = None
+    scope = None
+    expires_in = None
 
-    print("\nObtendo Access Token...")
-    token_info = orcid_client.get_orcid_id_and_access_token(auth_code)
+    if "access_token" in work_data and "scope" in work_data and "expires_in" in work_data:
+        access_token = work_data["access_token"]
+        scope = work_data["scope"]
+        expires_in = work_data["expires_in"]
 
-    if "access_token" not in token_info:
-        print("\nErro ao obter Access Token! Verifique suas credenciais.")
-        exit()
+    if not access_token or orcid_client.is_authorized_access_token(scope, expires_in) is False:
+        print("\nO autor não possui token ou está expirado, para obter seu código de autorização, acesse:\n")
+        print(
+            f"https://sandbox.orcid.org/oauth/authorize?client_id={CLIENT_ID}&response_type=code&scope=/activities/update&redirect_uri={REDIRECT_URI}"
+        )
+        auth_code = input("\nInsira o código de autorização do ORCID: ")
 
-    access_token = token_info["access_token"]
-    orcid_id = token_info["orcid"]
+        print("\nObtendo Access Token...")
+        token_info = orcid_client.get_orcid_id_and_access_token(auth_code)
+
+        if "access_token" not in token_info:
+            print("\nErro ao obter Access Token! Verifique suas credenciais.")
+            exit()
+        
+        access_token = token_info["access_token"]
+        orcid_id = token_info["orcid"]
 
     print(f"Access Token obtido: {access_token}")
     print(f"ORCID ID: {orcid_id}")

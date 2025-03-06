@@ -1,4 +1,6 @@
 import unittest
+import json
+import os
 from unittest.mock import patch, Mock
 from orcid_client import OrcidClient
 
@@ -47,6 +49,20 @@ class TestOrcidClient(unittest.TestCase):
         
         self.assertEqual(status, 403)
         self.assertIn("Permission denied", response["error"])
+    
+    def test_validate_access_token_permission_with_invalid_scope(self):
+        scope = "/read-limited"
+        expires_in = 3600
+        is_valid_token = self.client.is_authorized_access_token(scope, expires_in)
+            
+        self.assertFalse(is_valid_token)
+    
+    def test_validate_access_token_permission_with_expired_token(self):
+        scope = "/activities/update"
+        expires_in = 3600
+        is_valid_token = self.client.is_authorized_access_token(scope, expires_in)
+            
+        self.assertFalse(is_valid_token)
     
 if __name__ == "__main__":
     unittest.main()
