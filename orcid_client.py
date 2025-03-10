@@ -3,21 +3,22 @@ import datetime
 
 class OrcidClient:
     API_VERSION = "v3.0"
-    BASE_URL = "https://api.sandbox.orcid.org/" + API_VERSION
+    API_BASE_URL = "https://api.sandbox.orcid.org/" + API_VERSION
+    BASE_URL = "https://sandbox.orcid.org"
     ORCID_API_MEMBER_SCOPE = "/activities/update"
 
     def __init__(self, client_id, client_secret, redirect_uri):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self.token_url = "https://sandbox.orcid.org/oauth/token"
+        self.token_url = f"{self.BASE_URL}/oauth/token"
     
     def is_authorized_access_token(self, scope, expires_in):
         current_date = datetime.datetime.now()
         return scope == self.ORCID_API_MEMBER_SCOPE and current_date.timestamp() < expires_in
     
     def get_auth_url(self):
-        return (f"https://sandbox.orcid.org/oauth/authorize?client_id={self.client_id}"
+        return (f"{self.BASE_URL}/oauth/authorize?client_id={self.client_id}"
                 f"&response_type=code&scope={self.ORCID_API_MEMBER_SCOPE}"
                 f"&redirect_uri={self.redirect_uri}")
     
@@ -36,7 +37,7 @@ class OrcidClient:
         return response.json()
 
     def publish_to_orcid(self, access_token, orcid_id, work_data):
-        url = f"{self.BASE_URL}/{orcid_id}/work"
+        url = f"{self.API_BASE_URL}/{orcid_id}/work"
         headers = {
             "Content-Type": "application/vnd.orcid+json",
             "Accept": "application/json",
