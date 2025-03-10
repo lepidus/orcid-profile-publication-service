@@ -16,6 +16,11 @@ class OrcidClient:
         current_date = datetime.datetime.now()
         return scope == self.ORCID_API_MEMBER_SCOPE and current_date.timestamp() < expires_in
     
+    def get_auth_url(self):
+        return (f"https://sandbox.orcid.org/oauth/authorize?client_id={self.client_id}"
+                f"&response_type=code&scope={self.ORCID_API_MEMBER_SCOPE}"
+                f"&redirect_uri={self.redirect_uri}")
+    
     def get_orcid_id_and_access_token(self, authorization_code):
         params = {
             "client_id": self.client_id,
