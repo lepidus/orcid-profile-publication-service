@@ -1,6 +1,7 @@
 stages:
   - test
   - security
+  - deploy
 
 before_script:
   - apt update -y && apt install python3 python3-pip -y
