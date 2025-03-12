@@ -35,9 +35,14 @@ class AuthServer:
                         </body>
                     </html>
                 """)
-            
+
             self.pending_authorizations[state]['code'] = code
             self.pending_authorizations[state]['completed'] = True
+            
+            request_id = self.pending_authorizations[state].get('request_id')
+            
+            if request_id:
+                pass
             
             return render_template_string("""
                 <html>
@@ -47,6 +52,16 @@ class AuthServer:
                     </body>
                 </html>
             """)
+
+    def register_authorization_for_request(self, request_id):
+        state = str(uuid.uuid4())
+        self.pending_authorizations[state] = {
+            'request_id': request_id,
+            'code': None,
+            'completed': False,
+            'timestamp': datetime.datetime.now()
+        }
+        return state
     
     def start(self):
         if self.running:

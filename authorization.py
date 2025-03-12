@@ -14,7 +14,7 @@ class OrcidAuthorization:
         if not auth_server.running:
             auth_server.start()
     
-    def process_authorization(self, author_email, author_name, work_data, storage_path=None):
+    def process_authorization(self, author_email, author_name, work_data, storage_path=None, request_id=None):
         access_token = None
         orcid_id = None
         
@@ -40,7 +40,10 @@ class OrcidAuthorization:
         if not access_token:
             logger.info("Iniciando processo de autorização")
             
-            state = self.auth_server.register_authorization()
+            if request_id:
+                state = self.auth_server.register_authorization_for_request(request_id)
+            else:
+                state = self.auth_server.register_authorization()
             
             auth_url = f"{self.orcid_client.get_auth_url()}&state={state}"
             
@@ -59,47 +62,12 @@ class OrcidAuthorization:
             
             logger.info(f"Email enviado para {author_email}. Aguardando autorização...")
             
-            auth_code = self.auth_server.wait_for_authorization(state, timeout=300)
+            return {
+                "success": True,
+                "status": "awaiting_authorization", 
+                "message": f"Email enviado para {author_email}. Aguardando autorização"
+            }
             
-            if not auth_code:
-                logger.error("Timeout de autorização atingido")
-                return {
-                    "success": False,
-                    "error": "Tempo limite para autorização excedido"
-                }
-            
-            logger.info("Código de autorização recebido")
-            
-            token_info = self.orcid_client.get_orcid_id_and_access_token(auth_code)
-            
-            if "error" in token_info or "access_token" not in token_info:
-                logger.error(f"Erro ao obter token: {token_info.get('error', 'Erro desconhecido')}")
-                return {
-                    "success": False,
-                    "error": token_info.get("error", "Falha ao obter token de acesso")
-                }
-            
-            access_token = token_info["access_token"]
-            orcid_id = token_info["orcid"]
-            
-            if storage_path:
-                try:
-                    with open(storage_path, 'w') as file:
-                        expires_at = int(time.time()) + token_info.get("expires_in", 3600)
-                        
-                        storage_data = {
-                            "access_token": access_token,
-                            "refresh_token": token_info.get("refresh_token"),
-                            "orcid": orcid_id,
-                            "scope": token_info.get("scope"),
-                            "expires_in": expires_at
-                        }
-                        
-                        json.dump(storage_data, file, indent=2)
-                        logger.info(f"Dados de token armazenados em {storage_path}")
-                except Exception as e:
-                    logger.error(f"Erro ao armazenar token: {str(e)}")
-        
         logger.info(f"Publicando trabalho para ORCID ID: {orcid_id}")
         status, response = self.orcid_client.publish_to_orcid(access_token, orcid_id, work_data)
         
