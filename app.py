@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 CLIENT_ID = os.environ.get('ORCID_CLIENT_ID')
 CLIENT_SECRET = os.environ.get('ORCID_CLIENT_SECRET')
-REDIRECT_URI = "http://localhost:5000/orcid/callback"
+REDIRECT_URI = os.environ.get('REDIRECT_URI')
 
-SMTP_SERVER = "localhost"
-SMTP_PORT = 1025
-EMAIL_USERNAME = ""
-EMAIL_PASSWORD = ""
+SMTP_SERVER = os.environ.get('SMTP_SERVER')
+SMTP_PORT = os.environ.get('SMTP_PORT')
+EMAIL_USERNAME = os.environ.get('EMAIL_USERNAME')
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
 SENDER_EMAIL = "desenvlepidus@mailinator.com"
 
 app = Flask(__name__)
