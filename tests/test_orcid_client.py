@@ -63,6 +63,10 @@ class TestOrcidClient(unittest.TestCase):
         is_valid_token = self.client.is_authorized_access_token(scope, expires_in)
             
         self.assertFalse(is_valid_token)
+
+    def test_oauth_url_build_with_success(self):
+        expected_url = "https://sandbox.orcid.org/oauth/authorize?client_id=fake_client_id&response_type=code&scope=/activities/update&redirect_uri=http://localhost/redirectUrlExample"
+        self.assertEqual(expected_url, self.client.get_auth_url())
     
 if __name__ == "__main__":
     unittest.main()
