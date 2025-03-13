@@ -29,6 +29,9 @@ build_docker_image:
   variables:
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
+    ORCID_CLIENT_ID: ${ORCID_CLIENT_ID}
+    ORCID_CLIENT_SECRET: ${ORCID_CLIENT_SECRET}
+    REDIRECT_URI: ${ORCID_REDIRECT_URI}
   before_script: []
   script:
     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME .
