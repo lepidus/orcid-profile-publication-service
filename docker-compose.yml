@@ -14,5 +14,5 @@ services:
   mailpit:
     image: axllent/mailpit
     ports:
-      - "8025:8025"  # Interface web do Mailpit
-      - "1025:1025"  # Porta SMTP
+      - "8025:8025"
+      - "1025:1025"
