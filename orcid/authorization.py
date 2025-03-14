@@ -67,7 +67,7 @@ class OrcidAuthorization:
                 }
                 
             try:
-                token_response = self.orcid_client.get_token(auth_code)
+                token_response = self.orcid_client.get_orcid_id_and_access_token(auth_code)
                 access_token = token_response.get('access_token')
                 orcid_id = token_response.get('orcid')
                 
