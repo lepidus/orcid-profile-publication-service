@@ -6,7 +6,7 @@ import time
 import datetime
 from flask import Flask, request, jsonify, render_template_string
 from orcid.orcid_client import OrcidClient
-from email_sender import EmailSender 
+from orcid.email_sender import EmailSender 
 from orcid.authorization import OrcidAuthorization
 
 logging.basicConfig(
