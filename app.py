@@ -2,6 +2,7 @@ import os
 import logging
 import threading
 import uuid
+import time
 from flask import Flask, request, jsonify
 from orcid_client import OrcidClient
 from email_sender import EmailSender 
@@ -107,5 +108,4 @@ def request_status(request_id):
     return jsonify(response)
 
 if __name__ == "__main__":
-    import time
     app.run(host='0.0.0.0', port=5100)

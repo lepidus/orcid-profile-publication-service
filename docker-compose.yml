@@ -1,18 +1,60 @@
-version: '3'
+version: '3.8'
+
 services:
   web:
-    build: .
+    image: gitlab.lepidus.com.br:5050/softwares-pkp/ferramentas-scielo/orcid-push-library:main
     ports:
       - "127.0.0.1:5100:5100"
     environment:
-      - ORCID_CLIENT_ID=${ORCID_CLIENT_ID}
-      - ORCID_CLIENT_SECRET=${ORCID_CLIENT_SECRET}
-      - REDIRECT_URI=${REDIRECT_URI}
+      - ORCID_CLIENT_ID=""
+      - ORCID_CLIENT_SECRET=""
+      - REDIRECT_URI="https://orcidscielo.emnuvens.com.br/orcid/callback"
+    user: '1000:1000'  # rodar como usuario regular
+    command: ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:5100", "--access-logfile", "-", "--error-logfile", "-", "--timeout", "3600", "app:app"]
     depends_on:
       - mailpit
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+#    read_only: true  # Monta o sistema de arquivos como somente leitura
+#    cap_drop:
+#      - ALL  # Remove todas as capacidades, adicione o que for necessário com cap_add
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - network_orcidscielo
 
   mailpit:
     image: axllent/mailpit
     ports:
       - "127.0.0.1:8025:8025"
       - "127.0.0.1:1025:1025"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - network_orcidscielo
+
+  # Serviço do Watchtower para monitorar e atualizar containers
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    environment:
+      - "WATCHTOWER_CLEANUP=true"
+      #- "WATCHTOWER_NOTIFICATION_REPORT=true"
+      #- "WATCHTOWER_NOTIFICATION_URL=mattermost://watchbot@papo.lepidus.com.br/<TOKEN>"
+    volumes:
+      - /root/.docker/config.json:/config.json:ro # Volume como somente leitura
+      - /var/run/docker.sock:/var/run/docker.sock
+      #- /etc/hosts:/etc/hosts:ro
+    command: --interval 60  # Verifica atualizações a cada 1 minuto (60 segundos)
+
+networks:
+  network_orcidscielo:
