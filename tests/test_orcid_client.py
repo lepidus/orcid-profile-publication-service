@@ -2,7 +2,7 @@ import unittest
 import json
 import os
 from unittest.mock import patch, Mock
-from orcid_client import OrcidClient
+from orcid.orcid_client import OrcidClient
 
 class TestOrcidClient(unittest.TestCase):
 
