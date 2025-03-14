@@ -29,7 +29,7 @@ app = Flask(__name__)
 pending_requests = {}
 
 orcid_client = OrcidClient(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
-auth_server = AuthServer(host='localhost', port=5000)
+auth_server = AuthServer(host='localhost', port=5100)
 email_sender = EmailSender(
     SMTP_SERVER, SMTP_PORT, 
     EMAIL_USERNAME, EMAIL_PASSWORD, 
@@ -108,4 +108,4 @@ def request_status(request_id):
 
 if __name__ == "__main__":
     import time
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5100)

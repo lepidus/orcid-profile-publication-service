@@ -3,7 +3,7 @@ services:
   web:
     build: .
     ports:
-      - "127.0.0.1:5000:5000"
+      - "127.0.0.1:5100:5100"
     environment:
       - ORCID_CLIENT_ID=${ORCID_CLIENT_ID}
       - ORCID_CLIENT_SECRET=${ORCID_CLIENT_SECRET}
