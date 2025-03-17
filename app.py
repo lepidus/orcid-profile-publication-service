@@ -4,10 +4,12 @@ import threading
 import uuid
 import time
 import datetime
+import json
 from flask import Flask, request, jsonify, render_template_string
 from orcid.orcid_client import OrcidClient
-from orcid.email_sender import EmailSender 
+from orcid.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
+from models import db, PendingAuthorization, PendingRequest
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,16 +29,44 @@ SENDER_EMAIL = "scielo_desenv@mailinator.com"
 
 app = Flask(__name__)
 
-pending_requests = {}
-pending_authorizations = {}
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///orcid_authorizations.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
 orcid_client = OrcidClient(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
-
 email_sender = EmailSender(
     SMTP_SERVER, SMTP_PORT, 
     EMAIL_USERNAME, EMAIL_PASSWORD, 
     SENDER_EMAIL
 )
+
+def register_authorization_for_request(request_id):
+    with app.app_context():
+        state = str(uuid.uuid4())
+        auth = PendingAuthorization(
+            state=state,
+            request_id=request_id,
+            code=None,
+            completed=False,
+            timestamp=datetime.datetime.now()
+        )
+        db.session.add(auth)
+        db.session.commit()
+        return state
+
+def wait_for_authorization(state, timeout=300):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        with app.app_context():
+            auth = PendingAuthorization.query.filter_by(state=state).first()
+            if auth and auth.completed:
+                return auth.code
+        time.sleep(1)
+    
+    with app.app_context():
+        PendingAuthorization.query.filter_by(state=state).delete()
+        db.session.commit()
+    return None
 
 @app.route('/push_to_orcid', methods=['POST'])
 def push_to_orcid():
@@ -50,13 +80,16 @@ def push_to_orcid():
         
         request_id = str(uuid.uuid4())
         
-        pending_requests[request_id] = {
-            'author_email': data['author_email'],
-            'author_name': data['author_name'],
-            'work_data': data['work_data'],
-            'timestamp': time.time(),
-            'status': 'processing'
-        }
+        pending_request = PendingRequest(
+            request_id=request_id,
+            author_email=data['author_email'],
+            author_name=data['author_name'],
+            status='processing'
+        )
+        pending_request.set_work_data(data['work_data'])
+        
+        db.session.add(pending_request)
+        db.session.commit()
         
         thread = threading.Thread(target=process_authorization, args=(request_id,))
         thread.daemon = True
@@ -74,19 +107,19 @@ def push_to_orcid():
 
 @app.route('/request_status/<request_id>', methods=['GET'])
 def request_status(request_id):
-    if request_id not in pending_requests:
-        return jsonify({"success": False, "error": "Solicitação não encontrada"}), 404
+    pending_request = PendingRequest.query.filter_by(request_id=request_id).first()
     
-    request_data = pending_requests[request_id]
+    if not pending_request:
+        return jsonify({"success": False, "error": "Solicitação não encontrada"}), 404
     
     response = {
         "success": True,
-        "status": request_data['status'],
-        "author_email": request_data['author_email']
+        "status": pending_request.status,
+        "author_email": pending_request.author_email
     }
     
-    if request_data['status'] == 'completed' and 'result' in request_data:
-        response.update(request_data['result'])
+    if pending_request.status == 'completed' and pending_request.result:
+        response.update(pending_request.get_result())
     
     return jsonify(response)
 
@@ -95,19 +128,33 @@ def oauth_callback():
     code = request.args.get('code')
     state = request.args.get('state')
     
-    if not code or not state or state not in pending_authorizations:
+    if not code or not state:
+        logger.error(f"Parâmetros de autorização incompletos: code={code}, state={state}")
+        return render_template_string("""
+            <html>
+                <body>
+                    <h1>Erro na Autorização</h1>
+                    <p>Parâmetros incompletos no callback.</p>
+                </body>
+            </html>
+        """)
+    
+    auth = PendingAuthorization.query.filter_by(state=state).first()
+    
+    if not auth:
         logger.error(f"Autorização inválida: code={code}, state={state}")
         return render_template_string("""
             <html>
                 <body>
                     <h1>Erro na Autorização</h1>
-                    <p>Ocorreu um erro no processo de autorização.</p>
+                    <p>Estado de autorização não encontrado.</p>
                 </body>
             </html>
         """)
-
-    pending_authorizations[state]['code'] = code
-    pending_authorizations[state]['completed'] = True
+    
+    auth.code = code
+    auth.completed = True
+    db.session.commit()
     
     return render_template_string("""
         <html>
@@ -118,27 +165,6 @@ def oauth_callback():
         </html>
     """)
 
-def register_authorization_for_request(request_id):
-    state = str(uuid.uuid4())
-    pending_authorizations[state] = {
-        'request_id': request_id,
-        'code': None,
-        'completed': False,
-        'timestamp': datetime.datetime.now()
-    }
-    return state
-
-def wait_for_authorization(state, timeout=300):
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if state in pending_authorizations and pending_authorizations[state]['completed']:
-            return pending_authorizations[state]['code']
-        time.sleep(1)
-    
-    if state in pending_authorizations:
-        del pending_authorizations[state]
-    return None
-
 orcid_authorization = OrcidAuthorization(
     orcid_client, 
     email_sender,
@@ -147,18 +173,29 @@ orcid_authorization = OrcidAuthorization(
 )
 
 def process_authorization(request_id):
-    request_data = pending_requests[request_id]
-    
-    result = orcid_authorization.process_authorization(
-        author_email=request_data['author_email'],
-        author_name=request_data['author_name'],
-        work_data=request_data['work_data'],
-        storage_path=f"author_token_{request_id}.json",
-        request_id=request_id
-    )
-    
-    pending_requests[request_id]['status'] = 'completed' if result['success'] else 'failed'
-    pending_requests[request_id]['result'] = result
+    with app.app_context():
+        pending_request = PendingRequest.query.filter_by(request_id=request_id).first()
+        
+        if not pending_request:
+            logger.error(f"Solicitação não encontrada: {request_id}")
+            return
+        
+        result = orcid_authorization.process_authorization(
+            author_email=pending_request.author_email,
+            author_name=pending_request.author_name,
+            work_data=pending_request.get_work_data(),
+            storage_path=f"author_token_{request_id}.json",
+            request_id=request_id
+        )
+        
+        pending_request.status = 'completed' if result['success'] else 'failed'
+        pending_request.set_result(result)
+        db.session.commit()
+
+def create_tables():
+    db.create_all()
 
 if __name__ == "__main__":
+    with app.app_context():
+        create_tables()
     app.run(host='0.0.0.0', port=5100)

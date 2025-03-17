@@ -9,6 +9,9 @@ services:
       - ORCID_CLIENT_ID=""
       - ORCID_CLIENT_SECRET=""
       - REDIRECT_URI="https://orcidscielo.emnuvens.com.br/oauth/callback"
+      - SQLALCHEMY_DATABASE_URI=sqlite:////data/orcid_authorizations.db
+    volumes:
+      - db_data:/data
     user: '1000:1000'  # rodar como usuario regular
     command: ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:5100", "--access-logfile", "-", "--error-logfile", "-", "--timeout", "3600", "app:app"]
     depends_on:
@@ -55,6 +58,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       #- /etc/hosts:/etc/hosts:ro
     command: --interval 60  # Verifica atualizações a cada 1 minuto (60 segundos)
+
+volumes:
+  db_data:
 
 networks:
   network_orcidscielo:
