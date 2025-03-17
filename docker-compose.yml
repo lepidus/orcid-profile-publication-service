@@ -8,7 +8,7 @@ services:
     environment:
       - ORCID_CLIENT_ID=""
       - ORCID_CLIENT_SECRET=""
-      - REDIRECT_URI="https://orcidscielo.emnuvens.com.br/orcid/callback"
+      - REDIRECT_URI="https://orcidscielo.emnuvens.com.br/oauth/callback"
     user: '1000:1000'  # rodar como usuario regular
     command: ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:5100", "--access-logfile", "-", "--error-logfile", "-", "--timeout", "3600", "app:app"]
     depends_on:
