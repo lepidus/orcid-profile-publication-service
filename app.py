@@ -90,8 +90,8 @@ def request_status(request_id):
     
     return jsonify(response)
 
-@app.route('/orcid/callback')
-def orcid_callback():
+@app.route('/oauth/callback')
+def oauth_callback():
     code = request.args.get('code')
     state = request.args.get('state')
     
