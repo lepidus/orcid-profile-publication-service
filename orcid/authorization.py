@@ -6,13 +6,11 @@ import os
 logger = logging.getLogger(__name__)
 
 class OrcidAuthorization:
-    def __init__(self, orcid_client, auth_server, email_sender):
+    def __init__(self, orcid_client, email_sender, register_authorization_func, wait_for_authorization_func):
         self.orcid_client = orcid_client
-        self.auth_server = auth_server
         self.email_sender = email_sender
-        
-        if not auth_server.running:
-            auth_server.start()
+        self.register_authorization = register_authorization_func
+        self.wait_for_authorization = wait_for_authorization_func
     
     def process_authorization(self, author_email, author_name, work_data, storage_path=None, request_id=None):
         access_token = None
@@ -40,10 +38,7 @@ class OrcidAuthorization:
         if not access_token:
             logger.info("Iniciando processo de autorização")
             
-            if request_id:
-                state = self.auth_server.register_authorization_for_request(request_id)
-            else:
-                state = self.auth_server.register_authorization()
+            state = self.register_authorization(request_id)
             
             auth_url = f"{self.orcid_client.get_auth_url()}&state={state}"
             
@@ -62,11 +57,29 @@ class OrcidAuthorization:
             
             logger.info(f"Email enviado para {author_email}. Aguardando autorização...")
             
-            return {
-                "success": True,
-                "status": "awaiting_authorization", 
-                "message": f"Email enviado para {author_email}. Aguardando autorização"
-            }
+            auth_code = self.wait_for_authorization(state, timeout=300)
+            
+            if not auth_code:
+                return {
+                    "success": True,
+                    "status": "awaiting_authorization", 
+                    "message": f"Email enviado para {author_email}. Aguardando autorização"
+                }
+                
+            try:
+                token_response = self.orcid_client.get_orcid_id_and_access_token(auth_code)
+                access_token = token_response.get('access_token')
+                orcid_id = token_response.get('orcid')
+                
+                if storage_path:
+                    with open(storage_path, 'w') as file:
+                        json.dump(token_response, file)
+            except Exception as e:
+                logger.error(f"Erro ao obter token: {str(e)}")
+                return {
+                    "success": False,
+                    "error": f"Falha ao obter token: {str(e)}"
+                }
             
         logger.info(f"Publicando trabalho para ORCID ID: {orcid_id}")
         status, response = self.orcid_client.publish_to_orcid(access_token, orcid_id, work_data)

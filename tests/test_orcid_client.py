@@ -2,14 +2,14 @@ import unittest
 import json
 import os
 from unittest.mock import patch, Mock
-from orcid_client import OrcidClient
+from orcid.orcid_client import OrcidClient
 
 class TestOrcidClient(unittest.TestCase):
 
     def setUp(self):
         self.client = OrcidClient("fake_client_id", "fake_client_secret", "http://localhost/redirectUrlExample")
     
-    @patch('orcid_client.requests.post')
+    @patch('orcid.orcid_client.requests.post')
     def test_get_orcid_id_and_access_token_with_success(self, mock_post):
         mock_response = Mock()
         mock_response.status_code = 200
@@ -24,7 +24,7 @@ class TestOrcidClient(unittest.TestCase):
         self.assertEqual(token_info["access_token"], "fake_token")
         self.assertEqual(token_info["orcid"], "0000-0000-0000-0000")
     
-    @patch('orcid_client.requests.post')
+    @patch('orcid.orcid_client.requests.post')
     def test_publish_work_with_success(self, mock_post):
         mock_response = Mock()
         mock_response.status_code = 201
@@ -37,7 +37,7 @@ class TestOrcidClient(unittest.TestCase):
         self.assertEqual(status, 201)
         self.assertIn("Work added", response["message"])
     
-    @patch('orcid_client.requests.post')
+    @patch('orcid.orcid_client.requests.post')
     def test_error_when_publish_to_orcid(self, mock_post):
         mock_response = Mock()
         mock_response.status_code = 403
