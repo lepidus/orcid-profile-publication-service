@@ -1,6 +1,13 @@
 import requests
 import datetime
+import logging
 
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 class OrcidClient:
     API_VERSION = "v3.0"
     API_BASE_URL = "https://api.sandbox.orcid.org/" + API_VERSION
@@ -24,6 +31,7 @@ class OrcidClient:
                 f"&redirect_uri={self.redirect_uri}")
     
     def get_orcid_id_and_access_token(self, authorization_code):
+        logger.info(f"Obtendo access token a partir do authorization code: {authorization_code}")
         params = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
@@ -31,9 +39,10 @@ class OrcidClient:
             "code": authorization_code,
             "redirect_uri": self.redirect_uri
         }
-
+        logger.info(f"parâmetros passados para a requisição: {params}")
         headers = {"Accept": "application/json"}
         response = requests.post(self.token_url, data=params, headers=headers)
+        logger.info(f"Resposta da requisição: {response.text}")
 
         return response.json()
 
