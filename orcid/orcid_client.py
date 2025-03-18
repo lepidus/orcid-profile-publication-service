@@ -4,6 +4,7 @@ import datetime
 class OrcidClient:
     API_VERSION = "v3.0"
     API_BASE_URL = "https://api.sandbox.orcid.org/" + API_VERSION
+    SANDBOX_API_URL = "https://api.sandbox.orcid.org"
     BASE_URL = "https://sandbox.orcid.org"
     ORCID_API_MEMBER_SCOPE = "/activities/update"
 
@@ -11,7 +12,7 @@ class OrcidClient:
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self.token_url = f"{self.BASE_URL}/oauth/token"
+        self.token_url = f"{self.SANDBOX_API_URL}/oauth/token"
     
     def is_authorized_access_token(self, scope, expires_in):
         current_date = datetime.datetime.now()
