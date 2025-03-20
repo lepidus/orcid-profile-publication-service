@@ -13,7 +13,7 @@ class EmailSender:
         self.password = password
         self.sender_email = sender_email or "noreply@exemplo.com"
     
-    def send_authorization_email(self, recipient_email, author_name, auth_url):
+    def send_authorization_email(self, recipient_email, author_name, publication_title, journal_title, auth_url):
         try:
             msg = MIMEMultipart()
             msg['From'] = self.sender_email
@@ -24,7 +24,10 @@ class EmailSender:
             <html>
                 <body>
                     <p>Prezado(a) {author_name},</p>
-                    <p>Clique no link para autorizar: <a href="{auth_url}">{auth_url}</a></p>
+                    <p>Você foi listada(o) como um coautor(a) em uma publicação de título "{publication_title}"
+                        para o periódico "{journal_title}". Para que essa publicação seja incluída automaticamente
+                        em seu registro ORCID, por favor, confirme sua autorização usando o link fornecido abaixo.</p>
+                    <p><a href="{auth_url}">{auth_url}</a></p>
                 </body>
             </html>
             """
