@@ -4,3 +4,6 @@ class PublicationDataRetrieval:
 
     def get_publication_title(self):
         return self.work_data["title"]["title"]["value"]
+
+    def get_journal_title(self):
+        return self.work_data["journal-title"]["value"]
