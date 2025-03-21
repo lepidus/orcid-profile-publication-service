@@ -10,6 +10,7 @@ from orcid.orcid_client import OrcidClient
 from orcid.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
 from models import db, PendingAuthorization, PendingRequest
+from sqlalchemy import inspect
 
 logging.basicConfig(
     level=logging.INFO,
@@ -193,7 +194,15 @@ def process_authorization(request_id):
         db.session.commit()
 
 def create_tables():
-    db.create_all()
+    inspector = inspect(db.engine)
+    
+    existing_tables = inspector.get_table_names()
+    
+    if not existing_tables:
+        logger.info("Creating database tables...")
+        db.create_all()
+    else:
+        logger.info("Tables already exist, skipping creation")
 
 with app.app_context():
     create_tables()
