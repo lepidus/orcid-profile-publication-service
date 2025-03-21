@@ -2,6 +2,7 @@ import time
 import logging
 import json
 import os
+from orcid.publication_data_retrieval import PublicationDataRetrieval
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +43,12 @@ class OrcidAuthorization:
             
             auth_url = f"{self.orcid_client.get_auth_url()}&state={state}"
             
+            publication_data_retrieval = PublicationDataRetrieval(work_data)
             email_sent = self.email_sender.send_authorization_email(
                 author_email, 
-                author_name, 
+                author_name,
+                publication_data_retrieval.get_publication_title(),
+                publication_data_retrieval.get_journal_title(),
                 auth_url
             )
             
