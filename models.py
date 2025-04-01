@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 db = SQLAlchemy()
@@ -11,7 +11,7 @@ class PendingAuthorization(db.Model):
     request_id = db.Column(db.String(36), index=True)
     code = db.Column(db.String(100), nullable=True)
     completed = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -29,7 +29,7 @@ class PendingRequest(db.Model):
     author_email = db.Column(db.String(255), nullable=False)
     author_name = db.Column(db.String(255), nullable=False)
     work_data = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     status = db.Column(db.String(50), default='processing')
     result = db.Column(db.Text, nullable=True)
     
