@@ -26,6 +26,7 @@ class PendingRequest(db.Model):
     __tablename__ = 'pending_requests'
     
     request_id = db.Column(db.String(36), primary_key=True)
+    state = db.Column(db.Text, nullable=True)
     author_email = db.Column(db.String(255), nullable=False)
     author_name = db.Column(db.String(255), nullable=False)
     work_data = db.Column(db.Text, nullable=False)
@@ -35,6 +36,9 @@ class PendingRequest(db.Model):
     
     def set_work_data(self, work_data_dict):
         self.work_data = json.dumps(work_data_dict)
+    
+    def set_state(self, state):
+        self.state = state
     
     def get_work_data(self):
         return json.loads(self.work_data) if self.work_data else {}

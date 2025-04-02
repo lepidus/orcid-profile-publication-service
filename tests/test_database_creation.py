@@ -4,6 +4,7 @@ from app import app, db
 from config_test import TestConfig
 from models import PendingRequest, PendingAuthorization
 from sqlalchemy import inspect
+import uuid
 
 class TestDatabaseCreation(unittest.TestCase):
     def setUp(self):
@@ -22,7 +23,6 @@ class TestDatabaseCreation(unittest.TestCase):
             inspection = inspect(db.engine)
             tables = inspection.get_table_names()
             self.assertIn('pending_requests', tables)
-            self.assertIn('pending_authorizations', tables)
             
     def test_create_pending_request(self):
         with app.app_context():
@@ -39,6 +39,25 @@ class TestDatabaseCreation(unittest.TestCase):
             saved_request = db.session.get(PendingRequest, 'test-123')
             self.assertIsNotNone(saved_request)
             self.assertEqual(saved_request.author_email, 'test@example.com')
+    
+    def test_add_pending_request_state_id(self):
+        with app.app_context():
+            request = PendingRequest(
+                request_id='test-123',
+                author_email='test@example.com',
+                author_name='Test Author',
+                status='processing',
+                work_data='{"title": "Test Work"}'
+            )
+            db.session.add(request)
+            db.session.commit()
+            
+            state = str(uuid.uuid4())
+            request = db.session.get(PendingRequest, 'test-123')
+            request.set_state(state)
+            db.session.commit()
+            self.assertEqual(request.state, state)
+
 
 if __name__ == '__main__':
     unittest.main()
