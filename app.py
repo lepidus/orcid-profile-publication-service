@@ -135,7 +135,7 @@ def oauth_callback():
     
     result = orcid_authorization.process_orcid_publication(pending_request, code)
     if result['success']:
-        pending_request.delete()
+        db.session.delete(pending_request)
         db.session.commit()
         return render_template_string("""
             <html>
