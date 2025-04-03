@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     image: gitlab.lepidus.com.br:5050/softwares-pkp/ferramentas-scielo/orcid-push-library:main

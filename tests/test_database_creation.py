@@ -2,7 +2,7 @@ import unittest
 import os
 from app import app, db
 from config_test import TestConfig
-from models import PendingRequest, PendingAuthorization
+from models import PendingRequest
 from sqlalchemy import inspect
 import uuid
 

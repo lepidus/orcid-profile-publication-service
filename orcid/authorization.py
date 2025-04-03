@@ -7,15 +7,13 @@ from orcid.publication_data_retrieval import PublicationDataRetrieval
 logger = logging.getLogger(__name__)
 
 class OrcidAuthorization:
-    def __init__(self, orcid_client, email_sender, register_authorization_func, wait_for_authorization_func):
+    def __init__(self, orcid_client, email_sender, register_authorization_func):
         self.orcid_client = orcid_client
         self.email_sender = email_sender
         self.register_authorization = register_authorization_func
-        self.wait_for_authorization = wait_for_authorization_func
     
     def process_authorization(self, author_email, author_name, work_data, storage_path=None, request_id=None):
         access_token = None
-        orcid_id = None
         
         if storage_path and os.path.exists(storage_path):
             try:
@@ -31,8 +29,11 @@ class OrcidAuthorization:
                                 stored_data["expires_in"]):
                             
                             access_token = stored_data["access_token"]
-                            orcid_id = stored_data.get("orcid")
                             logger.info("Token válido encontrado no armazenamento")
+                            return self.process_orcid_publication(
+                                request_id, 
+                                access_token
+                            ) 
             except Exception as e:
                 logger.error(f"Erro ao ler arquivo de armazenamento: {str(e)}")
         
@@ -61,35 +62,30 @@ class OrcidAuthorization:
             
             logger.info(f"Email enviado para {author_email}. Aguardando autorização...")
             
-            auth_code = self.wait_for_authorization(state, timeout=300)
-            
-            if not auth_code:
-                return {
-                    "success": True,
-                    "status": "awaiting_authorization", 
-                    "message": f"Email enviado para {author_email}. Aguardando autorização"
-                }
-                
-            try:
-                token_response = self.orcid_client.get_orcid_id_and_access_token(auth_code)
-                access_token = token_response.get('access_token')
-                orcid_id = token_response.get('orcid')
-                
-                if storage_path:
-                    with open(storage_path, 'w') as file:
-                        json.dump(token_response, file)
-            except Exception as e:
-                logger.error(f"Erro ao obter token: {str(e)}")
-                return {
-                    "success": False,
-                    "error": f"Falha ao obter token: {str(e)}"
-                }
-            
+            return {
+                "success": True,
+                "status": "awaiting_authorization", 
+                "message": f"Email enviado para {author_email}. Aguardando autorização"
+            }
+    
+    def process_orcid_publication(self, pending_request, auth_code):
+        try:
+            token_response = self.orcid_client.get_orcid_id_and_access_token(auth_code)
+            access_token = token_response.get('access_token')
+            orcid_id = token_response.get('orcid')
+        except Exception as e:
+            logger.error(f"Erro ao obter token: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Falha ao obter token: {str(e)}"
+            }
+        
         logger.info(f"Publicando trabalho para ORCID ID: {orcid_id}")
-        status, response = self.orcid_client.publish_to_orcid(access_token, orcid_id, work_data)
+        status, response = self.orcid_client.publish_to_orcid(access_token, orcid_id, pending_request.get_work_data())
         
         if status == 201:
             logger.info("Trabalho publicado com sucesso!")
+            
             return {
                 "success": True,
                 "orcid_id": orcid_id,

@@ -9,7 +9,7 @@ from flask import Flask, request, jsonify, render_template_string
 from orcid.orcid_client import OrcidClient
 from orcid.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
-from models import db, PendingAuthorization, PendingRequest
+from models import db, PendingRequest
 from sqlalchemy import inspect
 
 logging.basicConfig(
@@ -43,31 +43,11 @@ email_sender = EmailSender(
 
 def register_authorization_for_request(request_id):
     with app.app_context():
+        pending_request = db.session.get(PendingRequest, request_id)
         state = str(uuid.uuid4())
-        auth = PendingAuthorization(
-            state=state,
-            request_id=request_id,
-            code=None,
-            completed=False,
-            timestamp=datetime.datetime.now()
-        )
-        db.session.add(auth)
+        pending_request.set_state(state)
         db.session.commit()
-        return state
-
-def wait_for_authorization(state, timeout=300):
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        with app.app_context():
-            auth = PendingAuthorization.query.filter_by(state=state).first()
-            if auth and auth.completed:
-                return auth.code
-        time.sleep(1)
-    
-    with app.app_context():
-        PendingAuthorization.query.filter_by(state=state).delete()
-        db.session.commit()
-    return None
+        return pending_request.state
 
 @app.route('/push_to_orcid', methods=['POST'])
 def push_to_orcid():
@@ -140,37 +120,45 @@ def oauth_callback():
             </html>
         """)
     
-    auth = PendingAuthorization.query.filter_by(state=state).first()
+    pending_request = PendingRequest.query.filter_by(state=state).first()
     
-    if not auth:
+    if not pending_request:
         logger.error(f"Autorização inválida: code={code}, state={state}")
         return render_template_string("""
             <html>
                 <body>
                     <h1>Erro na Autorização</h1>
-                    <p>Estado de autorização não encontrado.</p>
+                    <p>Estado de autorização não encontrado nas requisições solicitadas.</p>
                 </body>
             </html>
         """)
     
-    auth.code = code
-    auth.completed = True
-    db.session.commit()
+    result = orcid_authorization.process_orcid_publication(pending_request, code)
+    if result['success']:
+        pending_request.delete()
+        db.session.commit()
+        return render_template_string("""
+            <html>
+                <body>
+                    <h1>Autorização Concluída com Sucesso!</h1>
+                    <p>Você pode fechar esta janela agora.</p>
+                </body>
+            </html>
+        """)
     
     return render_template_string("""
-        <html>
-            <body>
-                <h1>Autorização Concluída com Sucesso!</h1>
-                <p>Você pode fechar esta janela agora.</p>
-            </body>
-        </html>
-    """)
+            <html>
+                <body>
+                    <h1>Não conseguimos publicar na Orcid com o código de autorização fornecido</h1>
+                    <p>Considere checar se a API Orcid tem permissões de publicação e verifique os erros no log do servidor.</p>
+                </body>
+            </html>
+        """)
 
 orcid_authorization = OrcidAuthorization(
     orcid_client, 
     email_sender,
-    register_authorization_func=register_authorization_for_request,
-    wait_for_authorization_func=wait_for_authorization
+    register_authorization_func=register_authorization_for_request
 )
 
 def process_authorization(request_id):
