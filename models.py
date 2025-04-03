@@ -1,40 +1,25 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 db = SQLAlchemy()
-
-class PendingAuthorization(db.Model):
-    __tablename__ = 'pending_authorizations'
-    
-    state = db.Column(db.String(36), primary_key=True)
-    request_id = db.Column(db.String(36), index=True)
-    code = db.Column(db.String(100), nullable=True)
-    completed = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'state': self.state,
-            'request_id': self.request_id,
-            'code': self.code,
-            'completed': self.completed,
-            'timestamp': self.timestamp.isoformat() if self.timestamp else None
-        }
-
 class PendingRequest(db.Model):
     __tablename__ = 'pending_requests'
     
     request_id = db.Column(db.String(36), primary_key=True)
+    state = db.Column(db.Text, nullable=True)
     author_email = db.Column(db.String(255), nullable=False)
     author_name = db.Column(db.String(255), nullable=False)
     work_data = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     status = db.Column(db.String(50), default='processing')
     result = db.Column(db.Text, nullable=True)
     
     def set_work_data(self, work_data_dict):
         self.work_data = json.dumps(work_data_dict)
+    
+    def set_state(self, state):
+        self.state = state
     
     def get_work_data(self):
         return json.loads(self.work_data) if self.work_data else {}
