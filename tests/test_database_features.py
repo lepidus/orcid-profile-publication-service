@@ -53,6 +53,23 @@ class TestDatabaseFeatures(unittest.TestCase):
             saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test@example.com')
             self.assertIsNotNone(saved_authorized_access_token)
             self.assertEqual(saved_authorized_access_token.author_email, 'test@example.com')
+    
+    def test_authorized_access_token_update(self):
+        with app.app_context():
+            authorized_access_token = AuthorizedAccessToken(
+                author_email='test@example.com',
+                access_token='test-token',
+                expiration_time=3600
+            )
+            db.session.add(authorized_access_token)
+            db.session.commit()
+            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test@example.com')
+            saved_authorized_access_token.set_access_token('new-token')
+            saved_authorized_access_token.set_expiration_time(7200)
+            db.session.commit()
+            self.assertIsNotNone(saved_authorized_access_token)
+            self.assertEqual(saved_authorized_access_token.access_token, 'new-token')
+            self.assertEqual(saved_authorized_access_token.expiration_time, 7200)
 
     def create_pending_request_for_testing(self):
         request = PendingRequest(
