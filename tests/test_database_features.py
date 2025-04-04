@@ -2,11 +2,11 @@ import unittest
 import os
 from app import app, db
 from config_test import TestConfig
-from models import PendingRequest
+from models import PendingRequest, AuthorizedAccessToken
 from sqlalchemy import inspect
 import uuid
 
-class TestDatabaseCreation(unittest.TestCase):
+class TestDatabaseFeatures(unittest.TestCase):
     def setUp(self):
         app.config.from_object(TestConfig)
         self.client = app.test_client()
@@ -23,6 +23,7 @@ class TestDatabaseCreation(unittest.TestCase):
             inspection = inspect(db.engine)
             tables = inspection.get_table_names()
             self.assertIn('pending_requests', tables)
+            self.assertIn('authorized_access_tokens', tables)
             
     def test_create_pending_request(self):
         with app.app_context():
@@ -39,6 +40,26 @@ class TestDatabaseCreation(unittest.TestCase):
             request.set_state(state)
             db.session.commit()
             self.assertEqual(request.state, state)
+    
+    def test_create_authorized_access_token(self):
+        with app.app_context():
+            self.create_authorized_access_token()
+            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test-orcid-id')
+            self.assertIsNotNone(saved_authorized_access_token)
+            self.assertEqual(saved_authorized_access_token.orcid_id, 'test-orcid-id')
+    
+    def test_authorized_access_token_update(self):
+        with app.app_context():
+            self.create_authorized_access_token()
+            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test-orcid-id')
+            saved_authorized_access_token.set_author_email('test@mailinator.com')
+            saved_authorized_access_token.set_access_token('new-token')
+            saved_authorized_access_token.set_expiration_time(7200)
+            db.session.commit()
+            self.assertIsNotNone(saved_authorized_access_token)
+            self.assertEqual(saved_authorized_access_token.author_email, 'test@mailinator.com')
+            self.assertEqual(saved_authorized_access_token.access_token, 'new-token')
+            self.assertEqual(saved_authorized_access_token.expiration_time, 7200)
 
     def create_pending_request_for_testing(self):
         request = PendingRequest(
@@ -49,6 +70,16 @@ class TestDatabaseCreation(unittest.TestCase):
             work_data='{"title": "Test Work"}'
         )
         db.session.add(request)
+        db.session.commit()
+    
+    def create_authorized_access_token(self):
+        authorized_access_token = AuthorizedAccessToken(
+            orcid_id='test-orcid-id',
+            author_email='test@example.com',
+            access_token='test-token',
+            expiration_time=3600
+        )
+        db.session.add(authorized_access_token)
         db.session.commit()
 
 if __name__ == '__main__':

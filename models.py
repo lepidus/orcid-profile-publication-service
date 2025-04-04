@@ -39,3 +39,28 @@ class PendingRequest(db.Model):
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
             'result': self.get_result()
         }
+
+class AuthorizedAccessToken(db.Model):
+    __tablename__ = 'authorized_access_tokens'
+    orcid_id = db.Column(db.String(255), primary_key=True)
+    author_email = db.Column(db.String(255), nullable=False)
+    access_token = db.Column(db.String(255), nullable=False)
+    expiration_time = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+    def set_author_email(self, author_email):
+        self.author_email = author_email
+    
+    def set_access_token(self, access_token):
+        self.access_token = access_token
+    
+    def set_expiration_time(self, expiration_time):
+        self.expiration_time = expiration_time
+    
+    def to_dict(self):
+        return {
+            'author_email': self.author_email,
+            'access_token': self.access_token,
+            'expiration_time': self.expiration_time,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
+        }

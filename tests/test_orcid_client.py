@@ -15,7 +15,8 @@ class TestOrcidClient(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "access_token": "fake_token",
-            "orcid": "0000-0000-0000-0000"
+            "orcid": "0000-0000-0000-0000",
+            "expires_in": 3600
         }
         mock_post.return_value = mock_response
 
@@ -23,6 +24,7 @@ class TestOrcidClient(unittest.TestCase):
 
         self.assertEqual(token_info["access_token"], "fake_token")
         self.assertEqual(token_info["orcid"], "0000-0000-0000-0000")
+        self.assertEqual(token_info["expires_in"], 3600)
     
     @patch('orcid.orcid_client.requests.post')
     def test_publish_work_with_success(self, mock_post):
@@ -50,17 +52,9 @@ class TestOrcidClient(unittest.TestCase):
         self.assertEqual(status, 403)
         self.assertIn("Permission denied", response["error"])
     
-    def test_validate_access_token_permission_with_invalid_scope(self):
-        scope = "/read-limited"
-        expires_in = 3600
-        is_valid_token = self.client.is_authorized_access_token(scope, expires_in)
-            
-        self.assertFalse(is_valid_token)
-    
     def test_validate_access_token_permission_with_expired_token(self):
-        scope = "/activities/update"
         expires_in = 3600
-        is_valid_token = self.client.is_authorized_access_token(scope, expires_in)
+        is_valid_token = self.client.is_authorized_access_token(expires_in)
             
         self.assertFalse(is_valid_token)
 
