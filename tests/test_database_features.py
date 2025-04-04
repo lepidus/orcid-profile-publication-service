@@ -43,26 +43,14 @@ class TestDatabaseFeatures(unittest.TestCase):
     
     def test_create_authorized_access_token(self):
         with app.app_context():
-            authorized_access_token = AuthorizedAccessToken(
-                author_email='test@example.com',
-                access_token='test-token',
-                expiration_time=3600
-            )
-            db.session.add(authorized_access_token)
-            db.session.commit()
+            self.create_authorized_access_token()
             saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test@example.com')
             self.assertIsNotNone(saved_authorized_access_token)
             self.assertEqual(saved_authorized_access_token.author_email, 'test@example.com')
     
     def test_authorized_access_token_update(self):
         with app.app_context():
-            authorized_access_token = AuthorizedAccessToken(
-                author_email='test@example.com',
-                access_token='test-token',
-                expiration_time=3600
-            )
-            db.session.add(authorized_access_token)
-            db.session.commit()
+            self.create_authorized_access_token()
             saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test@example.com')
             saved_authorized_access_token.set_access_token('new-token')
             saved_authorized_access_token.set_expiration_time(7200)
@@ -80,6 +68,15 @@ class TestDatabaseFeatures(unittest.TestCase):
             work_data='{"title": "Test Work"}'
         )
         db.session.add(request)
+        db.session.commit()
+    
+    def create_authorized_access_token(self):
+        authorized_access_token = AuthorizedAccessToken(
+            author_email='test@example.com',
+            access_token='test-token',
+            expiration_time=3600
+        )
+        db.session.add(authorized_access_token)
         db.session.commit()
 
 if __name__ == '__main__':
