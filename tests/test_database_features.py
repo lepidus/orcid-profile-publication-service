@@ -6,7 +6,7 @@ from models import PendingRequest
 from sqlalchemy import inspect
 import uuid
 
-class TestDatabaseCreation(unittest.TestCase):
+class TestDatabaseFeatures(unittest.TestCase):
     def setUp(self):
         app.config.from_object(TestConfig)
         self.client = app.test_client()
@@ -23,6 +23,7 @@ class TestDatabaseCreation(unittest.TestCase):
             inspection = inspect(db.engine)
             tables = inspection.get_table_names()
             self.assertIn('pending_requests', tables)
+            self.assertIn('authorized_access_tokens', tables)
             
     def test_create_pending_request(self):
         with app.app_context():

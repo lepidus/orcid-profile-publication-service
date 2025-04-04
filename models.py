@@ -39,3 +39,9 @@ class PendingRequest(db.Model):
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
             'result': self.get_result()
         }
+
+class AuthorizedAccessTokens(db.Model):
+    __tablename__ = 'authorized_access_tokens'
+    author_email = db.Column(db.String(255), primary_key=True)
+    access_token = db.Column(db.String(255), nullable=False)
+    expiration_time = db.Column(db.Integer, nullable=False)
