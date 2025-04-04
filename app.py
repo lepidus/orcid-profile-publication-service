@@ -162,7 +162,7 @@ def oauth_callback():
             orcid_id=result['orcid_id'],
             author_email=pending_request.author_email,
             access_token=result['access_token'],
-            expiration_time=result['expires_in']
+            expiration_time=result['expiration_time']
         )
         db.session.add(authorized_access_token)
         db.session.commit()
