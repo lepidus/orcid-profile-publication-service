@@ -2,14 +2,11 @@ import os
 import logging
 import threading
 import uuid
-import time
-import datetime
-import json
 from flask import Flask, request, jsonify, render_template_string
 from orcid.orcid_client import OrcidClient
 from orcid.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
-from models import db, PendingRequest
+from models import db, PendingRequest, AuthorizedAccessToken
 from sqlalchemy import inspect
 
 logging.basicConfig(
@@ -54,11 +51,36 @@ def push_to_orcid():
     try:
         data = request.json
         
-        required_fields = ['author_email', 'author_name', 'work_data']
+        required_fields = ['orcid_id', 'author_email', 'author_name', 'work_data']
         for field in required_fields:
             if field not in data:
                 return jsonify({"success": False, "error": f"Campo obrigatório ausente: {field}"}), 400
         
+        authorized_access_token = AuthorizedAccessToken.query.filter_by(author_email=data['orcid_id']).first()
+        if authorized_access_token:
+            if orcid_client.is_authorized_access_token(authorized_access_token.expiration_time):
+                logger.info(f"O autor {data['author_email']} já autorizou SciELO Brasil para publicar em seu Orcid.")
+                status, response = orcid_client.publish_to_orcid(authorized_access_token.access_token, data['orcid_id'], data['work_data'])
+                if status == 201:
+                    logger.info("Trabalho publicado com sucesso!")
+                    
+                    return {
+                        "success": True,
+                        "orcid_id": authorized_access_token.orcid_id,
+                        "message": "Trabalho publicado com sucesso"
+                    }
+                else:
+                    logger.error(f"Falha ao publicar trabalho: {response}")
+                    return {
+                        "success": False,
+                        "error": f"Falha ao publicar trabalho: {response}"
+                    }
+            else:
+                logger.info(f"Token expirado encontrado para {data['author_email']}")
+                db.session.delete(authorized_access_token)
+                db.session.commit()
+                logger.info(f"Token expirado removido para {data['author_email']}")
+
         request_id = str(uuid.uuid4())
         
         pending_request = PendingRequest(
@@ -135,6 +157,17 @@ def oauth_callback():
     
     result = orcid_authorization.process_orcid_publication(pending_request, code)
     if result['success']:
+        logger.info(f"Armazenando autorização do token de acesso para: {result['orcid']}")
+        authorized_access_token = AuthorizedAccessToken(
+            orcid_id=result['orcid'],
+            author_email=pending_request.author_email,
+            access_token=result['access_token'],
+            expiration_time=result['expires_in']
+        )
+        db.session.add(authorized_access_token)
+        db.session.commit()
+        
+        logger.info(f"Token de acesso armazenado para: {result['orcid']}")
         db.session.delete(pending_request)
         db.session.commit()
         return render_template_string("""
@@ -173,7 +206,6 @@ def process_authorization(request_id):
             author_email=pending_request.author_email,
             author_name=pending_request.author_name,
             work_data=pending_request.get_work_data(),
-            storage_path=f"author_token_{request_id}.json",
             request_id=request_id
         )
         
