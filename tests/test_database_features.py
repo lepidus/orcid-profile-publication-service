@@ -44,18 +44,20 @@ class TestDatabaseFeatures(unittest.TestCase):
     def test_create_authorized_access_token(self):
         with app.app_context():
             self.create_authorized_access_token()
-            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test@example.com')
+            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test-orcid-id')
             self.assertIsNotNone(saved_authorized_access_token)
-            self.assertEqual(saved_authorized_access_token.author_email, 'test@example.com')
+            self.assertEqual(saved_authorized_access_token.orcid_id, 'test-orcid-id')
     
     def test_authorized_access_token_update(self):
         with app.app_context():
             self.create_authorized_access_token()
-            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test@example.com')
+            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test-orcid-id')
+            saved_authorized_access_token.set_author_email('test@mailinator.com')
             saved_authorized_access_token.set_access_token('new-token')
             saved_authorized_access_token.set_expiration_time(7200)
             db.session.commit()
             self.assertIsNotNone(saved_authorized_access_token)
+            self.assertEqual(saved_authorized_access_token.author_email, 'test@mailinator.com')
             self.assertEqual(saved_authorized_access_token.access_token, 'new-token')
             self.assertEqual(saved_authorized_access_token.expiration_time, 7200)
 
@@ -72,6 +74,7 @@ class TestDatabaseFeatures(unittest.TestCase):
     
     def create_authorized_access_token(self):
         authorized_access_token = AuthorizedAccessToken(
+            orcid_id='test-orcid-id',
             author_email='test@example.com',
             access_token='test-token',
             expiration_time=3600

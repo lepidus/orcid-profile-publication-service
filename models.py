@@ -42,11 +42,15 @@ class PendingRequest(db.Model):
 
 class AuthorizedAccessToken(db.Model):
     __tablename__ = 'authorized_access_tokens'
-    author_email = db.Column(db.String(255), primary_key=True)
+    orcid_id = db.Column(db.String(255), primary_key=True)
+    author_email = db.Column(db.String(255), nullable=False)
     access_token = db.Column(db.String(255), nullable=False)
     expiration_time = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
+    def set_author_email(self, author_email):
+        self.author_email = author_email
+    
     def set_access_token(self, access_token):
         self.access_token = access_token
     
