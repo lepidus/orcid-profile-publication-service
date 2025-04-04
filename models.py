@@ -40,7 +40,7 @@ class PendingRequest(db.Model):
             'result': self.get_result()
         }
 
-class AuthorizedAccessTokens(db.Model):
+class AuthorizedAccessToken(db.Model):
     __tablename__ = 'authorized_access_tokens'
     author_email = db.Column(db.String(255), primary_key=True)
     access_token = db.Column(db.String(255), nullable=False)

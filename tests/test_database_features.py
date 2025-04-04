@@ -2,7 +2,7 @@ import unittest
 import os
 from app import app, db
 from config_test import TestConfig
-from models import PendingRequest
+from models import PendingRequest, AuthorizedAccessToken
 from sqlalchemy import inspect
 import uuid
 
@@ -40,6 +40,19 @@ class TestDatabaseFeatures(unittest.TestCase):
             request.set_state(state)
             db.session.commit()
             self.assertEqual(request.state, state)
+    
+    def test_create_authorized_access_token(self):
+        with app.app_context():
+            authorized_access_token = AuthorizedAccessToken(
+                author_email='test@example.com',
+                access_token='test-token',
+                expiration_time=3600
+            )
+            db.session.add(authorized_access_token)
+            db.session.commit()
+            saved_authorized_access_token = db.session.get(AuthorizedAccessToken, 'test@example.com')
+            self.assertIsNotNone(saved_authorized_access_token)
+            self.assertEqual(saved_authorized_access_token.author_email, 'test@example.com')
 
     def create_pending_request_for_testing(self):
         request = PendingRequest(
