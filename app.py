@@ -157,9 +157,9 @@ def oauth_callback():
     
     result = orcid_authorization.process_orcid_publication(pending_request, code)
     if result['success']:
-        logger.info(f"Armazenando autorização do token de acesso para: {result['orcid']}")
+        logger.info(f"Armazenando autorização do token de acesso para: {result['orcid_id']}")
         authorized_access_token = AuthorizedAccessToken(
-            orcid_id=result['orcid'],
+            orcid_id=result['orcid_id'],
             author_email=pending_request.author_email,
             access_token=result['access_token'],
             expiration_time=result['expires_in']
@@ -167,7 +167,7 @@ def oauth_callback():
         db.session.add(authorized_access_token)
         db.session.commit()
         
-        logger.info(f"Token de acesso armazenado para: {result['orcid']}")
+        logger.info(f"Token de acesso armazenado para: {result['orcid_id']}")
         db.session.delete(pending_request)
         db.session.commit()
         return render_template_string("""
