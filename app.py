@@ -56,7 +56,7 @@ def push_to_orcid():
             if field not in data:
                 return jsonify({"success": False, "error": f"Campo obrigatório ausente: {field}"}), 400
         
-        authorized_access_token = AuthorizedAccessToken.query.filter_by(author_email=data['orcid_id']).first()
+        authorized_access_token = AuthorizedAccessToken.query.filter_by(orcid_id=data['orcid_id']).first()
         if authorized_access_token:
             if orcid_client.is_authorized_access_token(authorized_access_token.expiration_time):
                 logger.info(f"O autor {data['author_email']} já autorizou SciELO Brasil para publicar em seu Orcid.")
