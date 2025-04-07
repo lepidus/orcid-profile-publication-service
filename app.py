@@ -159,8 +159,7 @@ def oauth_callback():
     result = orcid_authorization.process_orcid_publication(pending_request, code)
     if result['success']:
         logger.info(f"Armazenando autorização do token de acesso para: {result['orcid_id']}")
-        # Calculate expiration time by adding expires_in to current time
-        expiration_time = datetime.datetime.now().timestamp() + result['expires_in']
+        expiration_time = datetime.datetime.now().timestamp() + result['expiration_time']
         
         authorized_access_token = AuthorizedAccessToken(
             orcid_id=result['orcid_id'],
