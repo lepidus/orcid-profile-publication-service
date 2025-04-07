@@ -22,8 +22,13 @@ class OrcidClient:
         self.token_url = f"{self.SANDBOX_API_URL}/oauth/token"
     
     def is_authorized_access_token(self, expiration_time):
-        current_date = datetime.datetime.now()
-        return current_date.timestamp() < expiration_time
+        if not expiration_time:
+            return False
+            
+        current_time = datetime.datetime.now().timestamp()
+
+        buffer_time = 300  
+        return current_time + buffer_time < expiration_time
     
     def get_auth_url(self):
         return (f"{self.BASE_URL}/oauth/authorize?client_id={self.client_id}"

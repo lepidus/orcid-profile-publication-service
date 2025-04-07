@@ -8,6 +8,7 @@ from orcid.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
 from models import db, PendingRequest, AuthorizedAccessToken
 from sqlalchemy import inspect
+import datetime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -158,11 +159,14 @@ def oauth_callback():
     result = orcid_authorization.process_orcid_publication(pending_request, code)
     if result['success']:
         logger.info(f"Armazenando autorização do token de acesso para: {result['orcid_id']}")
+        # Calculate expiration time by adding expires_in to current time
+        expiration_time = datetime.datetime.now().timestamp() + result['expires_in']
+        
         authorized_access_token = AuthorizedAccessToken(
             orcid_id=result['orcid_id'],
             author_email=pending_request.author_email,
             access_token=result['access_token'],
-            expiration_time=result['expiration_time']
+            expiration_time=expiration_time
         )
         db.session.add(authorized_access_token)
         db.session.commit()
