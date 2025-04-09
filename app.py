@@ -47,8 +47,8 @@ def register_authorization_for_request(request_id):
         db.session.commit()
         return pending_request.state
 
-@app.route('/push_to_orcid', methods=['POST'])
-def push_to_orcid():
+@app.route('/works', methods=['POST'])
+def works():
     try:
         data = request.json
         
