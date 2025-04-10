@@ -2,7 +2,7 @@ import unittest
 import os
 from app import app, db
 from config_test import TestConfig
-from models import PendingRequest, AuthorizedAccessToken
+from models import PendingRequest, AuthorizedAccessToken, PublishedWork
 from sqlalchemy import inspect
 import uuid
 
@@ -61,6 +61,19 @@ class TestDatabaseFeatures(unittest.TestCase):
             self.assertEqual(saved_authorized_access_token.author_email, 'test@mailinator.com')
             self.assertEqual(saved_authorized_access_token.access_token, 'new-token')
             self.assertEqual(saved_authorized_access_token.expiration_time, 7200)
+    
+    def test_create_published_work(self):
+        with app.app_context():
+            published_work = PublishedWork(
+                external_id='test-123',
+                orcid_id='test-orcid-id',
+                put_code='test-put-code'
+            )
+            db.session.add(published_work)
+            db.session.commit()
+            saved_published_work = db.session.get(PublishedWork, 'test-123')
+            self.assertIsNotNone(saved_published_work)
+            self.assertEqual(saved_published_work.put_code, 'test-put-code')
 
     def create_pending_request_for_testing(self):
         request = PendingRequest(

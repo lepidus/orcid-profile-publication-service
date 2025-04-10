@@ -65,7 +65,7 @@ class AuthorizedAccessToken(db.Model):
             'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
 
-class PublishedWorks(db.Model):
+class PublishedWork(db.Model):
     __tablename__ = 'published_works'
     external_id = db.Column(db.String(255), primary_key=True)
     orcid_id = db.Column(db.String(255), nullable=False)
