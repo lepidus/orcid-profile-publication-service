@@ -64,3 +64,18 @@ class AuthorizedAccessToken(db.Model):
             'expiration_time': self.expiration_time,
             'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
+
+class PublishedWorks(db.Model):
+    __tablename__ = 'published_works'
+    external_id = db.Column(db.String(255), primary_key=True)
+    orcid_id = db.Column(db.String(255), nullable=False)
+    put_code = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'external_id': self.external_id,
+            'orcid_id': self.orcid_id,
+            'put_code': self.put_code,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
+        }

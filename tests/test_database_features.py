@@ -24,6 +24,7 @@ class TestDatabaseFeatures(unittest.TestCase):
             tables = inspection.get_table_names()
             self.assertIn('pending_requests', tables)
             self.assertIn('authorized_access_tokens', tables)
+            self.assertIn('published_works', tables)
             
     def test_create_pending_request(self):
         with app.app_context():
