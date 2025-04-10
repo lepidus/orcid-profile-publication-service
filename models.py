@@ -72,6 +72,9 @@ class PublishedWork(db.Model):
     put_code = db.Column(db.String(255), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
+    def set_put_code(self, put_code):
+        self.put_code = put_code
+
     def to_dict(self):
         return {
             'external_id': self.external_id,

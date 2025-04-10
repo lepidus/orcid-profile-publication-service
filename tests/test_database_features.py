@@ -64,16 +64,19 @@ class TestDatabaseFeatures(unittest.TestCase):
     
     def test_create_published_work(self):
         with app.app_context():
-            published_work = PublishedWork(
-                external_id='test-123',
-                orcid_id='test-orcid-id',
-                put_code='test-put-code'
-            )
-            db.session.add(published_work)
-            db.session.commit()
+            self.create_published_work()
             saved_published_work = db.session.get(PublishedWork, 'test-123')
             self.assertIsNotNone(saved_published_work)
             self.assertEqual(saved_published_work.put_code, 'test-put-code')
+    
+    def test_published_work_update(self):
+        with app.app_context():
+            self.create_published_work()
+            saved_published_work = db.session.get(PublishedWork, 'test-123')
+            saved_published_work.set_put_code('123456')
+            db.session.commit()
+            self.assertIsNotNone(saved_published_work)
+            self.assertEqual(saved_published_work.put_code, '123456')
 
     def create_pending_request_for_testing(self):
         request = PendingRequest(
@@ -94,6 +97,15 @@ class TestDatabaseFeatures(unittest.TestCase):
             expiration_time=3600
         )
         db.session.add(authorized_access_token)
+        db.session.commit()
+    
+    def create_published_work(self):
+        published_work = PublishedWork(
+            external_id='test-123',
+            orcid_id='test-orcid-id',
+            put_code='test-put-code'
+        )
+        db.session.add(published_work)
         db.session.commit()
 
 if __name__ == '__main__':
