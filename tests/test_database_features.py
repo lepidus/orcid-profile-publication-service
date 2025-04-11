@@ -2,7 +2,7 @@ import unittest
 import os
 from app import app, db
 from config_test import TestConfig
-from models import PendingRequest, AuthorizedAccessToken
+from models import PendingRequest, AuthorizedAccessToken, PublishedWork
 from sqlalchemy import inspect
 import uuid
 
@@ -24,6 +24,7 @@ class TestDatabaseFeatures(unittest.TestCase):
             tables = inspection.get_table_names()
             self.assertIn('pending_requests', tables)
             self.assertIn('authorized_access_tokens', tables)
+            self.assertIn('published_works', tables)
             
     def test_create_pending_request(self):
         with app.app_context():
@@ -60,6 +61,22 @@ class TestDatabaseFeatures(unittest.TestCase):
             self.assertEqual(saved_authorized_access_token.author_email, 'test@mailinator.com')
             self.assertEqual(saved_authorized_access_token.access_token, 'new-token')
             self.assertEqual(saved_authorized_access_token.expiration_time, 7200)
+    
+    def test_create_published_work(self):
+        with app.app_context():
+            self.create_published_work()
+            saved_published_work = db.session.get(PublishedWork, 'test-123')
+            self.assertIsNotNone(saved_published_work)
+            self.assertEqual(saved_published_work.put_code, 'test-put-code')
+    
+    def test_published_work_update(self):
+        with app.app_context():
+            self.create_published_work()
+            saved_published_work = db.session.get(PublishedWork, 'test-123')
+            saved_published_work.set_put_code('123456')
+            db.session.commit()
+            self.assertIsNotNone(saved_published_work)
+            self.assertEqual(saved_published_work.put_code, '123456')
 
     def create_pending_request_for_testing(self):
         request = PendingRequest(
@@ -80,6 +97,15 @@ class TestDatabaseFeatures(unittest.TestCase):
             expiration_time=3600
         )
         db.session.add(authorized_access_token)
+        db.session.commit()
+    
+    def create_published_work(self):
+        published_work = PublishedWork(
+            external_id='test-123',
+            orcid_id='test-orcid-id',
+            put_code='test-put-code'
+        )
+        db.session.add(published_work)
         db.session.commit()
 
 if __name__ == '__main__':

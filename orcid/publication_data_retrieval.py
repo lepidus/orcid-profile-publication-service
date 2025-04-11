@@ -7,3 +7,6 @@ class PublicationDataRetrieval:
 
     def get_journal_title(self):
         return self.work_data["journal-title"]["value"]
+    
+    def get_external_id(self):
+        return self.work_data["external-ids"]["external-id"][0]["external-id-value"]
