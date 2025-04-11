@@ -29,8 +29,9 @@ class TestOrcidClient(unittest.TestCase):
     @patch('orcid.orcid_client.requests.post')
     def test_publish_work_with_success(self, mock_post):
         mock_response = Mock()
+        mock_response.headers = {"location": "https://sandbox.orcid.org/0000-0000-0000-0000/work/12345"}
         mock_response.status_code = 201
-        mock_response.json.return_value = {"message": "Work added"}
+        mock_response.json.return_value = {"message": "Work added", "put-code": "12345"}
         mock_post.return_value = mock_response
 
         data = {"title": "My article"}
@@ -38,6 +39,7 @@ class TestOrcidClient(unittest.TestCase):
 
         self.assertEqual(status, 201)
         self.assertIn("Work added", response["message"])
+        self.assertIn("12345", response["put-code"])
     
     @patch('orcid.orcid_client.requests.post')
     def test_error_when_publish_to_orcid(self, mock_post):

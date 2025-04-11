@@ -51,8 +51,12 @@ class OrcidClient:
 
         return response.json()
 
-    def publish_to_orcid(self, access_token, orcid_id, work_data):
+    def publish_to_orcid(self, access_token, orcid_id, work_data, published_item=None):
         url = f"{self.API_BASE_URL}/{orcid_id}/work"
+        if (published_item):
+            url += f"/{published_item.put_code}"
+            work_data['put-code'] = f"{published_item.put_code}"
+
         headers = {
             "Content-Type": "application/vnd.orcid+json",
             "Accept": "application/json",
@@ -60,13 +64,17 @@ class OrcidClient:
         }
 
         try:
-            response = requests.post(url, json=work_data, headers=headers)
-
+            if published_item:
+                response = requests.put(url, json=work_data, headers=headers)
+            else:
+                response = requests.post(url, json=work_data, headers=headers)
+                
             if not response.content or response.status_code == 204:
-                return response.status_code, {"message": "Nenhuma resposta do ORCID"}
+                return response.status_code, {"message": "Nenhuma resposta do ORCID", "put-code": response.headers['location'].split('/')[-1]}
 
             if response.status_code >= 400:
                 return response.status_code, {"error": f"Erro {response.status_code}: {response.text}"}
+
 
             return response.status_code, response.json()
 

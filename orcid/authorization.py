@@ -64,6 +64,7 @@ class OrcidAuthorization:
                 "orcid_id": orcid_id,
                 "access_token": access_token,
                 "expiration_time": expiration_time,
+                "put_code": response['put-code'],
                 "message": "Trabalho publicado com sucesso"
             }
         else:
