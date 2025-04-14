@@ -25,7 +25,7 @@ SMTP_SERVER = os.environ.get('SMTP_SERVER')
 SMTP_PORT = os.environ.get('SMTP_PORT')
 EMAIL_USERNAME = os.environ.get('EMAIL_USERNAME')
 EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
-SENDER_EMAIL = "scielo_desenv@mailinator.com"
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL')
 
 app = Flask(__name__)
 

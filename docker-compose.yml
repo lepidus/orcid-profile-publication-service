@@ -8,6 +8,11 @@ services:
       - ORCID_CLIENT_SECRET=""
       - REDIRECT_URI="https://orcidscielo.emnuvens.com.br/oauth/callback"
       - SQLALCHEMY_DATABASE_URI=sqlite:////data/orcid_authorizations.db
+      - SENDER_EMAIL="scielo_desenv@mailinator.com"
+      - ORCID_API_BASE_URL="https://api.sandbox.orcid.org"
+      - ORCID_BASE_URL="https://sandbox.orcid.org"
+      - ORCID_API_VERSION="v3.0"
+      - ORCID_API_MEMBER_SCOPE="/activities/update"
     volumes:
       - db_data:/data
     user: '1000:1000'  # rodar como usuario regular
