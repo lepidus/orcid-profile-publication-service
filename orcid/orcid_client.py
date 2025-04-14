@@ -1,6 +1,7 @@
 import requests
 import datetime
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -9,17 +10,15 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 class OrcidClient:
-    API_VERSION = "v3.0"
-    API_BASE_URL = "https://api.sandbox.orcid.org/" + API_VERSION
-    SANDBOX_API_URL = "https://api.sandbox.orcid.org"
-    BASE_URL = "https://sandbox.orcid.org"
-    ORCID_API_MEMBER_SCOPE = "/activities/update"
+    API_BASE_URL = f"{os.environ.get('ORCID_API_BASE_URL')}/{os.environ.get('ORCID_API_VERSION')}"
+    BASE_URL = os.environ.get('ORCID_BASE_URL')
+    ORCID_API_MEMBER_SCOPE = os.environ.get('ORCID_API_MEMBER_SCOPE')
 
     def __init__(self, client_id, client_secret, redirect_uri):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self.token_url = f"{self.SANDBOX_API_URL}/oauth/token"
+        self.token_url = f"{os.environ.get('ORCID_API_BASE_URL')}/oauth/token"
     
     def is_authorized_access_token(self, expiration_time):
         if not expiration_time:
