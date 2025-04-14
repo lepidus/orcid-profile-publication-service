@@ -10,7 +10,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 class OrcidClient:
-    API_BASE_URL = os.environ.get('ORCID_API_BASE_URL') + "/" + os.environ.get('ORCID_API_VERSION')
+    API_BASE_URL = f"{os.environ.get('ORCID_API_BASE_URL')}/{os.environ.get('ORCID_API_VERSION')}"
     BASE_URL = os.environ.get('ORCID_BASE_URL')
     ORCID_API_MEMBER_SCOPE = os.environ.get('ORCID_API_MEMBER_SCOPE')
 
