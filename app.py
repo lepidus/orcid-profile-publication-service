@@ -5,12 +5,12 @@ import uuid
 from flask import Flask, request, jsonify, render_template_string
 from utils.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
-from models import db, PendingRequest, AuthorizedAccessToken, PublishedWork
-from sqlalchemy import inspect
+from models import db, PendingRequest, AuthorizedAccessToken
 import datetime
 from utils.publication_data_retrieval import PublicationDataRetrieval
-from orcid_service import OrcidService
+from orcid.orcid_service import OrcidService
 from orcid.orcid_client import OrcidClient
+from utils.database_register import DatabaseRegister
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,6 +36,7 @@ db.init_app(app)
 
 orcid_client = OrcidClient(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
 orcid_service = OrcidService(orcid_client)
+database_register = DatabaseRegister(db)
 
 email_sender = EmailSender(
     SMTP_SERVER, SMTP_PORT, 
@@ -59,7 +60,7 @@ def works():
 
         request_id = str(uuid.uuid4())
         
-        register_pending_request(
+        database_register.register_pending_request(
             request_id=request_id,
             author_email=data['author_email'],
             author_name=data['author_name'],
@@ -114,7 +115,7 @@ def oauth_callback():
         logger.info(f"Armazenando autorização do token de acesso para: {result['orcid_id']}")
         expiration_time = datetime.datetime.now().timestamp() + result['expiration_time']
 
-        register_authorized_access_token(
+        database_register.register_authorized_access_token(
             orcid_id=result['orcid_id'],
             author_email=pending_request.author_email,
             access_token=result['access_token'],
@@ -126,7 +127,7 @@ def oauth_callback():
         put_code = result['put_code']
 
         logger.info(f"Armazenando trabalho para: {external_id}, put_code={put_code}")
-        register_published_work(
+        database_register.register_published_work(
             external_id=external_id,
             put_code=put_code,
             orcid_id=result['orcid_id']
@@ -153,55 +154,10 @@ def oauth_callback():
             </html>
         """)
 
-def register_pending_request(request_id, author_email, author_name, work_data):
-    pending_request = PendingRequest(
-        request_id=request_id,
-        author_email=author_email,
-        author_name=author_name,
-        work_data=work_data
-    )
-    
-    db.session.add(pending_request)
-    db.session.commit()
-
-    logger.info(f"Solicitação pendente registrada: {request_id}")
-
-def register_authorized_access_token(orcid_id, author_email, access_token, expiration_time):
-    authorized_access_token = AuthorizedAccessToken(
-        orcid_id=orcid_id,
-        author_email=author_email,
-        access_token=access_token,
-        expiration_time=expiration_time
-    )
-    
-    db.session.add(authorized_access_token)
-    db.session.commit()
-    logger.info(f"Token de acesso armazenado para: {orcid_id}")
-
-def register_published_work(external_id, put_code, orcid_id):
-    published_work = PublishedWork(
-        external_id=external_id,
-        put_code=put_code,
-        orcid_id=orcid_id
-    )
-    
-    db.session.add(published_work)
-    db.session.commit()
-
-    logger.info(f"Trabalho salvo: external_id={external_id}, put_code={put_code}")
-
-def register_pending_request_state(request_id):
-    with app.app_context():
-        pending_request = db.session.get(PendingRequest, request_id)
-        state = str(uuid.uuid4())
-        pending_request.set_state(state)
-        db.session.commit()
-        return pending_request.state
-
 orcid_authorization = OrcidAuthorization(
     orcid_client, 
     email_sender,
-    register_pending_request_state_func=register_pending_request_state
+    register_pending_request_state_func=database_register.register_pending_request_state
 )
 
 def process_authorization(request_id):
@@ -222,19 +178,8 @@ def process_authorization(request_id):
         pending_request.set_result(result)
         db.session.commit()
 
-def create_tables():
-    inspector = inspect(db.engine)
-    
-    existing_tables = inspector.get_table_names()
-    
-    if not existing_tables:
-        logger.info("Creating database tables...")
-        db.create_all()
-    else:
-        logger.info("Tables already exist, skipping creation")
-
 with app.app_context():
-    create_tables()
+    database_register.create_tables()
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5100)

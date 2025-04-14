@@ -9,7 +9,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def OrcidService():
+class OrcidService():
     def __init__(self, orcid_client):
         self.orcid_client = orcid_client
 
