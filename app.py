@@ -111,8 +111,7 @@ def works():
         pending_request = PendingRequest(
             request_id=request_id,
             author_email=data['author_email'],
-            author_name=data['author_name'],
-            status='processing'
+            author_name=data['author_name']
         )
         pending_request.set_work_data(data['work_data'])
         
