@@ -4,12 +4,12 @@ import threading
 import uuid
 from flask import Flask, request, jsonify, render_template_string
 from orcid.orcid_client import OrcidClient
-from orcid.email_sender import EmailSender
+from classes.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
 from models import db, PendingRequest, AuthorizedAccessToken, PublishedWork
 from sqlalchemy import inspect
 import datetime
-from orcid.publication_data_retrieval import PublicationDataRetrieval
+from classes.publication_data_retrieval import PublicationDataRetrieval
 
 logging.basicConfig(
     level=logging.INFO,
