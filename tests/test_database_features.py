@@ -83,7 +83,6 @@ class TestDatabaseFeatures(unittest.TestCase):
             request_id='test-123',
             author_email='test@example.com',
             author_name='Test Author',
-            status='processing',
             work_data='{"title": "Test Work"}'
         )
         db.session.add(request)

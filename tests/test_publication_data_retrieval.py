@@ -1,7 +1,5 @@
 import unittest
-import json
-import os
-from orcid.publication_data_retrieval import PublicationDataRetrieval
+from utils.publication_data_retrieval import PublicationDataRetrieval
 
 class TestPublicationDataRetrieval(unittest.TestCase):
 

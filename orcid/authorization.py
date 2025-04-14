@@ -1,18 +1,18 @@
 import logging
-from orcid.publication_data_retrieval import PublicationDataRetrieval
+from utils.publication_data_retrieval import PublicationDataRetrieval
 
 logger = logging.getLogger(__name__)
 
 class OrcidAuthorization:
-    def __init__(self, orcid_client, email_sender, register_authorization_func):
+    def __init__(self, orcid_client, email_sender, register_pending_request_state_func):
         self.orcid_client = orcid_client
         self.email_sender = email_sender
-        self.register_authorization = register_authorization_func
+        self.register_pending_request_state = register_pending_request_state_func
     
     def process_authorization(self, author_email, author_name, work_data, request_id=None):
         logger.info("Iniciando processo de autorização")
         
-        state = self.register_authorization(request_id)
+        state = self.register_pending_request_state(request_id)
         
         auth_url = f"{self.orcid_client.get_auth_url()}&state={state}"
         

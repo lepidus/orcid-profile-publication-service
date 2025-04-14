@@ -3,13 +3,14 @@ import logging
 import threading
 import uuid
 from flask import Flask, request, jsonify, render_template_string
-from orcid.orcid_client import OrcidClient
-from orcid.email_sender import EmailSender
+from utils.email_sender import EmailSender
 from orcid.authorization import OrcidAuthorization
-from models import db, PendingRequest, AuthorizedAccessToken, PublishedWork
-from sqlalchemy import inspect
+from models import db, PendingRequest, AuthorizedAccessToken
 import datetime
-from orcid.publication_data_retrieval import PublicationDataRetrieval
+from utils.publication_data_retrieval import PublicationDataRetrieval
+from orcid.orcid_service import OrcidService
+from orcid.orcid_client import OrcidClient
+from utils.database_register import DatabaseRegister
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,19 +35,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 orcid_client = OrcidClient(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
+orcid_service = OrcidService(orcid_client)
+database_register = DatabaseRegister(db)
+
 email_sender = EmailSender(
     SMTP_SERVER, SMTP_PORT, 
     EMAIL_USERNAME, EMAIL_PASSWORD, 
     SENDER_EMAIL
 )
-
-def register_authorization_for_request(request_id):
-    with app.app_context():
-        pending_request = db.session.get(PendingRequest, request_id)
-        state = str(uuid.uuid4())
-        pending_request.set_state(state)
-        db.session.commit()
-        return pending_request.state
 
 @app.route('/works', methods=['POST'])
 def works():
@@ -60,65 +56,17 @@ def works():
         
         authorized_access_token = AuthorizedAccessToken.query.filter_by(orcid_id=data['orcid_id']).first()
         if authorized_access_token:
-            if orcid_client.is_authorized_access_token(authorized_access_token.expiration_time):
-                logger.info(f"O autor {data['author_email']} já autorizou SciELO Brasil para publicar em seu Orcid.")
-                publication_data_retrieval = PublicationDataRetrieval(data['work_data'])
-                external_id = publication_data_retrieval.get_external_id()
-                published_work = PublishedWork.query.filter_by(external_id=external_id, orcid_id=data['orcid_id']).first()
-                if published_work:
-                    logger.info(f"O trabalho já foi publicado anteriormente. External id: {published_work.external_id}. Iniciando processo de atualização.")
-
-                    status, response = orcid_client.publish_to_orcid(authorized_access_token.access_token, data['orcid_id'], data['work_data'], published_work)
-                    if status == 200:
-                        logger.info("Trabalho atualizado com sucesso!")
-                        
-                        return {
-                            "success": True,
-                            "orcid_id": authorized_access_token.orcid_id,
-                            "message": "Trabalho atualizado com sucesso"
-                        }
-                    else:
-                        logger.error(f"Falha ao atualizar trabalho: {response}")
-                        return {
-                            "success": False,
-                            "error": f"Falha ao atualizar trabalho: {response}"
-                        }
-                else:
-                    status, response = orcid_client.publish_to_orcid(authorized_access_token.access_token, data['orcid_id'], data['work_data'])
-                    if status == 201:
-                        logger.info("Trabalho publicado com sucesso!")
-                        
-                        return {
-                            "success": True,
-                            "orcid_id": authorized_access_token.orcid_id,
-                            "message": "Trabalho publicado com sucesso",
-                            "put_code": response['put-code']
-                        }
-                    else:
-                        logger.error(f"Falha ao publicar trabalho: {response}")
-                        return {
-                            "success": False,
-                            "error": f"Falha ao publicar trabalho: {response}"
-                        }
-            else:
-                logger.info(f"Token expirado encontrado para {data['author_email']}")
-                db.session.delete(authorized_access_token)
-                db.session.commit()
-                logger.info(f"Token expirado removido para {data['author_email']}")
+            return orcid_service.publish_work(data, authorized_access_token)
 
         request_id = str(uuid.uuid4())
         
-        pending_request = PendingRequest(
+        database_register.register_pending_request(
             request_id=request_id,
             author_email=data['author_email'],
             author_name=data['author_name'],
-            status='processing'
+            work_data=data['work_data']
         )
-        pending_request.set_work_data(data['work_data'])
-        
-        db.session.add(pending_request)
-        db.session.commit()
-        
+
         thread = threading.Thread(target=process_authorization, args=(request_id,))
         thread.daemon = True
         thread.start()
@@ -132,24 +80,6 @@ def works():
     except Exception as e:
         logger.error(f"Erro ao processar solicitação: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route('/request_status/<request_id>', methods=['GET'])
-def request_status(request_id):
-    pending_request = PendingRequest.query.filter_by(request_id=request_id).first()
-    
-    if not pending_request:
-        return jsonify({"success": False, "error": "Solicitação não encontrada"}), 404
-    
-    response = {
-        "success": True,
-        "status": pending_request.status,
-        "author_email": pending_request.author_email
-    }
-    
-    if pending_request.status == 'completed' and pending_request.result:
-        response.update(pending_request.get_result())
-    
-    return jsonify(response)
 
 @app.route('/oauth/callback')
 def oauth_callback():
@@ -184,32 +114,26 @@ def oauth_callback():
     if result['success']:
         logger.info(f"Armazenando autorização do token de acesso para: {result['orcid_id']}")
         expiration_time = datetime.datetime.now().timestamp() + result['expiration_time']
-        
-        authorized_access_token = AuthorizedAccessToken(
+
+        database_register.register_authorized_access_token(
             orcid_id=result['orcid_id'],
             author_email=pending_request.author_email,
             access_token=result['access_token'],
             expiration_time=expiration_time
         )
-        db.session.add(authorized_access_token)
-        db.session.commit()
 
         publication_data = PublicationDataRetrieval(pending_request.get_work_data())
         external_id = publication_data.get_external_id()
         put_code = result['put_code']
-        
-        published_work = PublishedWork(
+
+        logger.info(f"Armazenando trabalho para: {external_id}, put_code={put_code}")
+        database_register.register_published_work(
             external_id=external_id,
             put_code=put_code,
             orcid_id=result['orcid_id']
         )
-        
-        db.session.add(published_work)
-        db.session.commit()
 
-        logger.info(f"Trabalho salvo: external_id={external_id}, put_code={put_code}")
-        
-        logger.info(f"Token de acesso armazenado para: {result['orcid_id']}")
+        logger.info(f"Removendo solicitação pendente: {pending_request.request_id}...")
         db.session.delete(pending_request)
         db.session.commit()
         return render_template_string("""
@@ -233,7 +157,7 @@ def oauth_callback():
 orcid_authorization = OrcidAuthorization(
     orcid_client, 
     email_sender,
-    register_authorization_func=register_authorization_for_request
+    register_pending_request_state_func=database_register.register_pending_request_state
 )
 
 def process_authorization(request_id):
@@ -250,24 +174,12 @@ def process_authorization(request_id):
             work_data=pending_request.get_work_data(),
             request_id=request_id
         )
-        
-        pending_request.status = 'completed' if result['success'] else 'failed'
+    
         pending_request.set_result(result)
         db.session.commit()
 
-def create_tables():
-    inspector = inspect(db.engine)
-    
-    existing_tables = inspector.get_table_names()
-    
-    if not existing_tables:
-        logger.info("Creating database tables...")
-        db.create_all()
-    else:
-        logger.info("Tables already exist, skipping creation")
-
 with app.app_context():
-    create_tables()
+    database_register.create_tables()
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5100)
