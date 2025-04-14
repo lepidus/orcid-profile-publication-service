@@ -133,24 +133,6 @@ def works():
         logger.error(f"Erro ao processar solicitação: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/request_status/<request_id>', methods=['GET'])
-def request_status(request_id):
-    pending_request = PendingRequest.query.filter_by(request_id=request_id).first()
-    
-    if not pending_request:
-        return jsonify({"success": False, "error": "Solicitação não encontrada"}), 404
-    
-    response = {
-        "success": True,
-        "status": pending_request.status,
-        "author_email": pending_request.author_email
-    }
-    
-    if pending_request.status == 'completed' and pending_request.result:
-        response.update(pending_request.get_result())
-    
-    return jsonify(response)
-
 @app.route('/oauth/callback')
 def oauth_callback():
     code = request.args.get('code')
@@ -250,8 +232,7 @@ def process_authorization(request_id):
             work_data=pending_request.get_work_data(),
             request_id=request_id
         )
-        
-        pending_request.status = 'completed' if result['success'] else 'failed'
+    
         pending_request.set_result(result)
         db.session.commit()
 

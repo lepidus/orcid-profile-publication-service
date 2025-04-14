@@ -12,7 +12,6 @@ class PendingRequest(db.Model):
     author_name = db.Column(db.String(255), nullable=False)
     work_data = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
-    status = db.Column(db.String(50), default='processing')
     result = db.Column(db.Text, nullable=True)
     
     def set_work_data(self, work_data_dict):
@@ -35,7 +34,6 @@ class PendingRequest(db.Model):
             'request_id': self.request_id,
             'author_email': self.author_email,
             'author_name': self.author_name,
-            'status': self.status,
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
             'result': self.get_result()
         }
