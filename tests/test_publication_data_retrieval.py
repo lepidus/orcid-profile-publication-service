@@ -1,5 +1,5 @@
 import unittest
-from classes.publication_data_retrieval import PublicationDataRetrieval
+from utils.publication_data_retrieval import PublicationDataRetrieval
 
 class TestPublicationDataRetrieval(unittest.TestCase):
 

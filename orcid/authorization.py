@@ -1,5 +1,5 @@
 import logging
-from classes.publication_data_retrieval import PublicationDataRetrieval
+from utils.publication_data_retrieval import PublicationDataRetrieval
 
 logger = logging.getLogger(__name__)
 
