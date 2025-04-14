@@ -18,9 +18,10 @@ class DatabaseRegister():
         pending_request = PendingRequest(
             request_id=request_id,
             author_email=author_email,
-            author_name=author_name,
-            work_data=work_data
+            author_name=author_name
         )
+
+        pending_request.set_work_data(work_data)
         
         self.database.session.add(pending_request)
         self.database.session.commit()
