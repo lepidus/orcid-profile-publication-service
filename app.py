@@ -40,7 +40,7 @@ email_sender = EmailSender(
     SENDER_EMAIL
 )
 
-def register_authorization_for_request(request_id):
+def register_pending_request_state(request_id):
     with app.app_context():
         pending_request = db.session.get(PendingRequest, request_id)
         state = str(uuid.uuid4())
@@ -214,7 +214,7 @@ def oauth_callback():
 orcid_authorization = OrcidAuthorization(
     orcid_client, 
     email_sender,
-    register_authorization_func=register_authorization_for_request
+    register_pending_request_state_func=register_pending_request_state
 )
 
 def process_authorization(request_id):
