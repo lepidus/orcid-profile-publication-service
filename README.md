@@ -77,7 +77,7 @@ Adicionar/Atualizar publicação
 Exemplo de requisição:
 
 ```sh
-curl -X POST https://localhost:5100/works \
+curl -X POST https://your_domain.com/works \
 -H "Content-Type: application/json" \
 -d '{
     "orcid_id": "0000-0002-1825-0097",
@@ -124,3 +124,65 @@ curl -X POST https://localhost:5100/works \
 | `work_data.publication-date.year.value` | `string` | **Obrigatório**. Ano de publicação |
 | `work_data.publication-date.month.value` | `string` | Mês de publicação (opcional) |
 | `work_data.publication-date.day.value` | `string` | Dia de publicação (opcional) |
+
+## Fluxo de publicação no perfil ORCID
+
+A biblioteca funciona em dois cenários distintos:
+
+- **Quando é a primeira solicitação de publicação de um autor (sem autorização prévia).**
+
+1. A biblioteca recebe uma requisição POST no endpoint /works, com os parâmetros relevantes no corpo da requisição (ex: ORCID ID, e-mail do autor, título, periódico etc.).
+2. Valida os dados e verifica se o autor já autorizou publicações.
+3. Como não há autorização, a biblioteca envia um e-mail com o link de autorização e armazena a requisição como pendente.
+4. Quando o autor autoriza, o ORCID envia um código para o endpoint /oauth/callback.
+5. A biblioteca usa esse código para obter o token de acesso e fazer a publicação no ORCID.
+6. O token é armazenado vinculado ao ORCID ID do autor, para futuras publicações.
+
+- **Quando o autor já autorizou previamente.**
+
+1. A biblioteca recebe uma requisição POST no endpoint /works.
+2. Valida os dados e confirma a autorização existente.
+3. Utiliza o token de acesso previamente armazenado para publicar diretamente no ORCID.
+
+- **Diagrama de sequência**
+
+![texto alternativo](https://i.imgur.com/qQvSanS.png)
+
+## Ambiente de desenvolvimento
+
+É possível montar um ambiente de desenvolvimento da biblioteca utilizando o docker-compose-local.yml, que disponibiliza a biblioteca em `http://localhost:5100`e o mailpit em `http://localhost:8025/`. É importante ressaltar que: não conseguimos fazer autorização em ambiente local. O redirecionamento da ORCID espera um domínio público e compatível com suas credenciais ORCID, nesse caso, é importante que o ambiente de teste esteja disponível e acessível para a ORCID sandbox redirecionar autorizações.
+
+- **Executar testes automatizados:**
+
+```bash
+python -m unittest discover -s tests/ -p "*.py" -v
+```
+
+## Estrutura do projeto
+
+```
+├── app.py                           # Aplicação principal Flask com as rotas e configurações
+├── docker-compose-local.yml         # Configuração Docker para ambiente de desenvolvimento
+├── docker-compose.yml              # Configuração Docker para ambiente de produção
+├── Dockerfile                      # Instruções para construir a imagem Docker
+├── models.py                       # Modelos SQLAlchemy para o banco de dados
+├── orcid/                         # Módulo com funcionalidades específicas da ORCID
+│   ├── authorization.py           # Gerencia o fluxo de autorização OAuth2
+│   ├── orcid_client.py           # Cliente para comunicação com a API ORCID
+│   ├── orcid_service.py          # Serviço de alto nível para operações ORCID
+├── README.md                      # Documentação do projeto
+├── requirements.txt               # Dependências Python necessárias
+├── tests/                        # Diretório de testes automatizados
+│   ├── config_test.py            # Configurações para ambiente de teste
+│   ├── test_database_features.py # Testes das funcionalidades do banco de dados
+│   ├── test_orcid_client.py      # Testes do cliente ORCID
+│   └── test_publication_data_retrieval.py  # Testes do processamento de dados
+└── utils/                        # Módulo com utilitários gerais
+    ├── database_register.py      # Gerenciamento de registros no banco de dados
+    ├── email_sender.py           # Serviço de envio de emails
+    ├── publication_data_retrieval.py  # Processamento de dados das publicações
+```
+
+## Créditos
+
+## Licença
