@@ -40,11 +40,25 @@ ORCID_API_BASE_URL=https://api.sandbox.orcid.org
 ORCID_BASE_URL=https://sandbox.orcid.org
 ORCID_API_VERSION=v3.0
 ORCID_API_MEMBER_SCOPE=/activities/update
+SMTP_SERVER=xxxxxxxxxxxx
+SMTP_PORT=xxxx
+EMAIL_USERNAME=xxxxxxxx
+EMAIL_PASSWORD=xxxxxxx
 ```
 
 **Observação: certifique-se de não usar aspas nos valores das variáveis, isso pode causar problemas nas requisições para a API da ORCID.**
 
 | Variável   | Descrição  |
 | :---------- | :--------- |
-| `ORCID_CLIENT_ID` | `string` |
-| `ORCID_CLIENT_ID` | `string` |
+| `ORCID_CLIENT_ID` | Identificador único do cliente fornecido pela ORCID para sua aplicação |
+| `ORCID_CLIENT_SECRET` | Chave secreta fornecida pela ORCID para autenticar sua aplicação |
+| `REDIRECT_URI` | URL para onde a ORCID redirecionará após a autorização do usuário (ex: https://domain.com.br/oauth/callback) |
+| `SENDER_EMAIL` | Endereço de e-mail que será usado como remetente para enviar os e-mails de autorização |
+| `ORCID_API_BASE_URL` | URL base da API ORCID (sandbox: https://api.sandbox.orcid.org, produção: https://api.orcid.org) |
+| `ORCID_BASE_URL` | URL base do site ORCID (sandbox: https://sandbox.orcid.org, produção: https://orcid.org) |
+| `ORCID_API_VERSION` | Versão da API ORCID a ser utilizada (atualmente v3.0) |
+| `ORCID_API_MEMBER_SCOPE` | Escopo de acesso para a API de membro da ORCID (geralmente /activities/update para publicações) |
+| `SMTP_SERVER` | Endereço do servidor SMTP para envio de emails (ex: smtp.gmail.com para Gmail, ou mailpit para ambiente de desenvolvimento) |
+| `SMTP_PORT` | Porta do servidor SMTP (ex: 1025 para Mailpit em desenvolvimento) |
+| `EMAIL_USERNAME` | Nome de usuário para autenticação no servidor SMTP |
+| `EMAIL_PASSWORD` | Senha para autenticação no servidor SMTP |
