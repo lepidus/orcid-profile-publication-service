@@ -182,7 +182,3 @@ python -m unittest discover -s tests/ -p "*.py" -v
     ├── email_sender.py           # Serviço de envio de emails
     ├── publication_data_retrieval.py  # Processamento de dados das publicações
 ```
-
-## Créditos
-
-## Licença
