@@ -11,13 +11,13 @@ Essa biblioteca fornece:
 
 ## Requisitos
 
-Se optar por criar seu ambiente baseado em Docker, considere somente o servidor SMTP e as credenciais API ORCID de membro. As dependências relevantes estão listadas no arquivo [requirements.txt](https://gitlab.lepidus.com.br/softwares-pkp/ferramentas-scielo/orcid-push-library/-/blob/main/requirements.txt?ref_type=heads).
+Se optar por criar seu ambiente baseado em Docker, considere somente o servidor SMTP e as credenciais API ORCID de membro. As dependências relevantes estão listadas no arquivo [requirements.txt](https://github.com/lepidus/Publica-trabalho-no-perfil-ORCID/blob/main/requirements.txt).
 
 - Python 3
-- requests
-- Flask
-- gunicorn (utilizamos em produção)
-- flask-sqlalchemy
+- [requests](https://pypi.org/project/requests/)
+- [Flask](https://pypi.org/project/Flask/)
+- [gunicorn](https://pypi.org/project/gunicorn/) (utilizamos em produção)
+- [flask-sqlalchemy](https://pypi.org/project/Flask-SQLAlchemy/)
 - Servidor SMTP para envio de e-mails
 - Credenciais de API de membro ORCID
 
@@ -26,7 +26,7 @@ Se optar por criar seu ambiente baseado em Docker, considere somente o servidor 
 1. Clone o repositório:
 
 ```bash
-git clone https://gitlab.lepidus.com.br/softwares-pkp/ferramentas-scielo/orcid-push-library.git
+git clone https://github.com/lepidus/Publica-trabalho-no-perfil-ORCID.git
 cd orcid-push-library
 ```
 
