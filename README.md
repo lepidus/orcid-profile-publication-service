@@ -182,3 +182,11 @@ python -m unittest discover -s tests/ -p "*.py" -v
     ├── email_sender.py           # Serviço de envio de emails
     ├── publication_data_retrieval.py  # Processamento de dados das publicações
 ```
+
+## Licença
+
+__Essa biblioteca é licenciada através da Licença Pública Geral GNU v3.0__
+
+__Copyright (c) 2025 Lepidus Tecnologia__
+
+__Copyright (c) 2025 SciELO__
