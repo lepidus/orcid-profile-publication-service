@@ -2,6 +2,13 @@ stages:
   - test
   - security
   - deploy
+  - build
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  APPLICATION_VERSION: "v1"
 
 before_script:
   - apt update -y && apt install python3 python3-pip -y
@@ -19,7 +26,7 @@ run_unit_tests:
   script:
     - python3 -m unittest discover -s tests/ -p "*.py" -v
 
-build_docker_image:
+build_gitlab_container_registry:
   stage: deploy
   tags:
     - alpine
@@ -39,4 +46,21 @@ build_docker_image:
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   only:
     - main
+
+build_docker_hub_image:
+  stage: build
+  tags:
+    - alpine
+  image: docker:20.10.10
+  services:
+    - docker:20.10.10-dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+  script:
+    - docker build --pull -t "${CI_REGISTRY_IMAGE}:${APPLICATION_VERSION}" .
+    - docker push "${CI_REGISTRY_IMAGE}:${APPLICATION_VERSION}"
+  only:
+    - main
+
+
 
