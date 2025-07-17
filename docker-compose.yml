@@ -1,6 +1,6 @@
 services:
   web:
-    image: gitlab.lepidus.com.br:5050/softwares-pkp/ferramentas-scielo/orcid-push-library:main
+    image: lepidustecnologia/orcid_push:main
     ports:
       - "127.0.0.1:5100:5100"
     environment:
