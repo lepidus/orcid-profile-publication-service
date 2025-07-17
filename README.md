@@ -27,7 +27,7 @@ Se optar por criar seu ambiente baseado em Docker, considere somente o servidor 
 
 ```bash
 git clone https://github.com/lepidus/Publica-trabalho-no-perfil-ORCID.git
-cd orcid-push-library
+cd Publica-trabalho-no-perfil-ORCID/
 ```
 
 2. Crie um arquivo `.env`:
