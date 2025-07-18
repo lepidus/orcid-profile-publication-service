@@ -1,10 +1,10 @@
-# Biblioteca para publicações na Orcid.org
+# Serviço para publicações na Orcid.org
 
 Permite a publicação no perfil ORCID de autores utilizando a API de membro da ORCID.
 
 ## Visão geral
 
-Essa biblioteca fornece:
+Esse serviço fornece:
 - Publicação no perfil ORCID
 - Fluxo de autorização OAuth2 via e-mail
 - Persistência do identificador da publicação e tokens de acesso autorizados
@@ -127,20 +127,20 @@ curl -X POST https://your_domain.com/works \
 
 ## Fluxo de publicação no perfil ORCID
 
-A biblioteca funciona em dois cenários distintos:
+O serviço funciona em dois cenários distintos:
 
 - **Quando é a primeira solicitação de publicação de um autor (sem autorização prévia).**
 
-1. A biblioteca recebe uma requisição POST no endpoint /works, com os parâmetros relevantes no corpo da requisição (ex: ORCID ID, e-mail do autor, título, periódico etc.).
+1. O serviço recebe uma requisição POST no endpoint /works, com os parâmetros relevantes no corpo da requisição (ex: ORCID ID, e-mail do autor, título, periódico etc.).
 2. Valida os dados e verifica se o autor já autorizou publicações.
-3. Como não há autorização, a biblioteca envia um e-mail com o link de autorização e armazena a requisição como pendente.
+3. Como não há autorização, o serviço envia um e-mail com o link de autorização e armazena a requisição como pendente.
 4. Quando o autor autoriza, o ORCID envia um código para o endpoint /oauth/callback.
-5. A biblioteca usa esse código para obter o token de acesso e fazer a publicação no ORCID.
+5. O serviço usa esse código para obter o token de acesso e fazer a publicação no ORCID.
 6. O token é armazenado vinculado ao ORCID ID do autor, para futuras publicações.
 
 - **Quando o autor já autorizou previamente.**
 
-1. A biblioteca recebe uma requisição POST no endpoint /works.
+1. O serviço recebe uma requisição POST no endpoint /works.
 2. Valida os dados e confirma a autorização existente.
 3. Utiliza o token de acesso previamente armazenado para publicar diretamente no ORCID.
 
@@ -150,7 +150,7 @@ A biblioteca funciona em dois cenários distintos:
 
 ## Ambiente de desenvolvimento
 
-É possível montar um ambiente de desenvolvimento da biblioteca utilizando o docker-compose-local.yml, que disponibiliza a biblioteca em `http://localhost:5100`e o mailpit em `http://localhost:8025/`. É importante ressaltar que: não conseguimos fazer autorização em ambiente local. O redirecionamento da ORCID espera um domínio público e compatível com suas credenciais ORCID, nesse caso, é importante que o ambiente de teste esteja disponível e acessível para a ORCID sandbox redirecionar autorizações.
+É possível montar um ambiente de desenvolvimento do serviço utilizando o docker-compose-local.yml, que disponibiliza o serviço em `http://localhost:5100`e o mailpit em `http://localhost:8025/`. É importante ressaltar que: não conseguimos fazer autorização em ambiente local. O redirecionamento da ORCID espera um domínio público e compatível com suas credenciais ORCID, nesse caso, é importante que o ambiente de teste esteja disponível e acessível para a ORCID sandbox redirecionar autorizações.
 
 - **Executar testes automatizados:**
 
@@ -185,7 +185,7 @@ python -m unittest discover -s tests/ -p "*.py" -v
 
 ## Licença
 
-__Essa biblioteca é licenciada através da Licença Pública Geral GNU v3.0__
+__Esse serviço é licenciado através da Licença Pública Geral GNU v3.0__
 
 __Copyright (c) 2025 Lepidus Tecnologia__
 
