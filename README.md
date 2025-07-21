@@ -11,7 +11,7 @@ Esse serviço fornece:
 
 ## Requisitos
 
-Se optar por criar seu ambiente baseado em Docker, considere somente o servidor SMTP e as credenciais API ORCID de membro. As dependências relevantes estão listadas no arquivo [requirements.txt](https://github.com/lepidus/Publica-trabalho-no-perfil-ORCID/blob/main/requirements.txt).
+Se optar por criar seu ambiente baseado em Docker, considere somente o servidor SMTP e as credenciais API ORCID de membro. As dependências relevantes estão listadas no arquivo [requirements.txt](https://github.com/lepidus/orcid-profile-publication-service/blob/main/requirements.txt).
 
 - Python 3
 - [requests](https://pypi.org/project/requests/)
@@ -26,8 +26,8 @@ Se optar por criar seu ambiente baseado em Docker, considere somente o servidor 
 1. Clone o repositório:
 
 ```bash
-git clone https://github.com/lepidus/Publica-trabalho-no-perfil-ORCID.git
-cd Publica-trabalho-no-perfil-ORCID/
+git clone https://github.com/lepidus/orcid-profile-publication-service.git
+cd orcid-profile-publication-service/
 ```
 
 2. Crie um arquivo `.env`:
