@@ -6,12 +6,12 @@ VOLATILE_KEYS = {
     "timestamp"
 }
 
-def _normalize(obj: Any) -> Any:
-    if isinstance(obj, dict):
-        return {k: _normalize(v) for k, v in sorted(obj.items()) if k not in VOLATILE_KEYS}
-    if isinstance(obj, list):
-        return [_normalize(v) for v in obj]
-    return obj
+def _normalize(data: Any) -> Any:
+    if isinstance(data, dict):
+        return {key: _normalize(value) for key, value in sorted(data.items()) if key not in VOLATILE_KEYS}
+    if isinstance(data, list):
+        return [_normalize(value) for value in data]
+    return data
 
 
 def compute_work_hash(work_data: Dict[str, Any]) -> str:
