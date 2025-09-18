@@ -5,7 +5,6 @@ from app import app, db
 from models import PendingRequest
 from utils.work_hash import compute_work_hash, canonicalize_work_json
 
-
 @pytest.fixture(scope="module")
 def test_client():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
