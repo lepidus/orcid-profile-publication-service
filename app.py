@@ -78,10 +78,10 @@ def works():
             .all()
         )
         request_id = None
-        for pr in existing_pending:
+        for pending_request in existing_pending:
             try:
-                if canonicalize_work_json(pr.get_work_data()) == canonical:
-                    request_id = pr.request_id
+                if canonicalize_work_json(pending_request.get_work_data()) == canonical:
+                    request_id = pending_request.request_id
                     logger.info("Solicitação pendente idêntica já existe; reutilizando request_id existente.")
 
                     return jsonify({
