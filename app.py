@@ -11,6 +11,7 @@ from utils.publication_data_retrieval import PublicationDataRetrieval
 from orcid.orcid_service import OrcidService
 from orcid.orcid_client import OrcidClient
 from utils.database_register import DatabaseRegister
+from utils.work_hash import compute_work_hash
 
 logging.basicConfig(
     level=logging.INFO,
@@ -53,24 +54,57 @@ def works():
         for field in required_fields:
             if field not in data:
                 return jsonify({"success": False, "error": f"Campo obrigatório ausente: {field}"}), 400
-        
+        work_hash = compute_work_hash(data['work_data'])
+
         authorized_access_token = AuthorizedAccessToken.query.filter_by(orcid_id=data['orcid_id']).first()
         if authorized_access_token:
+            publication_data_retrieval = PublicationDataRetrieval(data['work_data'])
+            external_id = publication_data_retrieval.get_external_id()
+            from models import PublishedWork
+            published_work = PublishedWork.query.filter_by(external_id=external_id, orcid_id=data['orcid_id']).first()
+
+            if published_work:
+                logger.info("Trabalho já publicado anteriormente; delegando para atualização/publicação conforme necessário.")
+                return orcid_service.publish_work(data, authorized_access_token)
+
+            logger.info("Token válido encontrado, publicando sem nova autorização.")
             return orcid_service.publish_work(data, authorized_access_token)
 
-        request_id = str(uuid.uuid4())
-        
-        database_register.register_pending_request(
-            request_id=request_id,
-            author_email=data['author_email'],
-            author_name=data['author_name'],
-            work_data=data['work_data']
+        from utils.work_hash import canonicalize_work_json
+        canonical = canonicalize_work_json(data['work_data'])
+        existing_pending = (
+            PendingRequest.query
+            .filter(PendingRequest.author_email == data['author_email'])
+            .all()
         )
+        request_id = None
+        for pr in existing_pending:
+            try:
+                if canonicalize_work_json(pr.get_work_data()) == canonical:
+                    request_id = pr.request_id
+                    logger.info("Solicitação pendente idêntica já existe; reutilizando request_id existente.")
+
+                    return jsonify({
+                        "success": True,
+                        "request_id": request_id,
+                        "message": "Solicitação já em andamento para este trabalho. Nenhuma nova autorização disparada."
+                    }), 202
+            except Exception:
+                continue
+
+        if not request_id:
+            request_id = str(uuid.uuid4())
+            database_register.register_pending_request(
+                request_id=request_id,
+                author_email=data['author_email'],
+                author_name=data['author_name'],
+                work_data=data['work_data']
+            )
 
         thread = threading.Thread(target=process_authorization, args=(request_id,))
         thread.daemon = True
         thread.start()
-        
+
         return jsonify({
             "success": True,
             "request_id": request_id,
