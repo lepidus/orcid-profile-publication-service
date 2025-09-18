@@ -1,5 +1,3 @@
-import json
-import os
 import pytest
 from app import app, db
 from models import PendingRequest
@@ -44,17 +42,17 @@ def sample_work():
 
 
 def test_hash_determinism():
-    w1 = sample_work()
-    w2 = sample_work()  # structurally identical
-    assert canonicalize_work_json(w1) == canonicalize_work_json(w2)
-    assert compute_work_hash(w1) == compute_work_hash(w2)
+    first_work = sample_work()
+    second_work = sample_work()
+    assert canonicalize_work_json(first_work) == canonicalize_work_json(second_work)
+    assert compute_work_hash(first_work) == compute_work_hash(second_work)
 
 
 def test_different_hash_on_modified_field():
-    w1 = sample_work()
-    w2 = sample_work()
-    w2['title']['subtitle']['value'] = 'Outro subtítulo'
-    assert compute_work_hash(w1) != compute_work_hash(w2)
+    first_work = sample_work()
+    second_work = sample_work()
+    second_work['title']['subtitle']['value'] = 'Outro subtítulo'
+    assert compute_work_hash(first_work) != compute_work_hash(second_work)
 
 
 def test_prevent_duplicate_pending_requests(test_client):
@@ -65,17 +63,17 @@ def test_prevent_duplicate_pending_requests(test_client):
         "work_data": sample_work()
     }
 
-    resp1 = test_client.post('/works', json=payload)
-    assert resp1.status_code == 202
-    data1 = resp1.get_json()
-    assert data1['success'] is True
-    first_request_id = data1['request_id']
+    first_response = test_client.post('/works', json=payload)
+    assert first_response.status_code == 202
+    data_obtained_by_first_response = first_response.get_json()
+    assert data_obtained_by_first_response['success'] is True
+    first_request_id = data_obtained_by_first_response['request_id']
 
-    resp2 = test_client.post('/works', json=payload)
-    assert resp2.status_code == 202
-    data2 = resp2.get_json()
-    assert data2['request_id'] == first_request_id
-    assert 'Nenhuma nova autorização' in data2['message']
+    second_response = test_client.post('/works', json=payload)
+    assert second_response.status_code == 202
+    data_obtained_by_second_response = second_response.get_json()
+    assert data_obtained_by_second_response['request_id'] == first_request_id
+    assert 'Nenhuma nova autorização' in data_obtained_by_second_response['message']
 
     with app.app_context():
         all_pending = PendingRequest.query.all()
@@ -84,28 +82,28 @@ def test_prevent_duplicate_pending_requests(test_client):
 
 def test_new_pending_when_work_changes(test_client):
     base = sample_work()
-    payload1 = {
+    first_payload_example = {
         "author_email": "autor2@mailinator.com",
         "author_name": "Autor 2",
         "orcid_id": "0009-0000-5294-7019",
         "work_data": base
     }
-    resp1 = test_client.post('/works', json=payload1)
-    assert resp1.status_code == 202
-    r1 = resp1.get_json()['request_id']
+    first_response = test_client.post('/works', json=first_payload_example)
+    assert first_response.status_code == 202
+    request_id_obtained_by_first_response = first_response.get_json()['request_id']
 
     modified = sample_work()
     modified['title']['title']['value'] = 'Título Alterado'
-    payload2 = {
+    second_payload_example = {
         "author_email": "autor2@mailinator.com",
         "author_name": "Autor 2",
         "orcid_id": "0009-0000-5294-7019",
         "work_data": modified
     }
-    resp2 = test_client.post('/works', json=payload2)
-    assert resp2.status_code == 202
-    r2 = resp2.get_json()['request_id']
-    assert r1 != r2, "Uma nova pendência deve ser criada quando o trabalho muda"
+    second_response = test_client.post('/works', json=second_payload_example)
+    assert second_response.status_code == 202
+    request_id_obtained_by_second_response = second_response.get_json()['request_id']
+    assert request_id_obtained_by_first_response != request_id_obtained_by_second_response, "Uma nova pendência deve ser criada quando o trabalho muda"
 
     with app.app_context():
         pending_for_author = PendingRequest.query.filter_by(author_email='autor2@mailinator.com').all()
